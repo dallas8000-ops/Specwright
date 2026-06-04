@@ -1,0 +1,369 @@
+.page {
+  max-width: 1100px;
+  margin: 0 auto;
+  padding: 2rem 2rem 4rem;
+}
+
+.loading {
+  color: var(--text-muted);
+}
+
+.header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 1.5rem;
+  margin-bottom: 2rem;
+}
+
+.eyebrow {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  font-family: var(--mono);
+  font-size: 0.75rem;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--accent);
+  margin-bottom: 0.5rem;
+}
+
+.header h1 {
+  font-size: 1.85rem;
+  font-weight: 700;
+  letter-spacing: -0.03em;
+  margin-bottom: 0.5rem;
+}
+
+.lead {
+  color: var(--text-muted);
+  max-width: 48ch;
+  font-size: 0.95rem;
+}
+
+.connectLink {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  padding: 0.55rem 1rem;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  font-size: 0.85rem;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.connectLink:hover {
+  border-color: var(--accent);
+  color: var(--accent);
+}
+
+.summaryGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+  gap: 0.75rem;
+  margin-bottom: 2rem;
+}
+
+.summaryCard {
+  padding: 1rem 1.1rem;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+}
+
+.summaryLabel {
+  display: block;
+  font-size: 0.68rem;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--text-muted);
+  margin-bottom: 0.35rem;
+}
+
+.summaryValue {
+  font-size: 1.5rem;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+}
+
+.summaryValue small {
+  font-size: 0.75rem;
+  font-weight: 500;
+  color: var(--text-muted);
+  margin-left: 0.15rem;
+}
+
+.tone_warning .summaryValue {
+  color: var(--warning);
+}
+
+.tone_success .summaryValue {
+  color: var(--success);
+}
+
+.driftSection,
+.trendSection,
+.tableSection,
+.sparkSection {
+  margin-bottom: 2rem;
+}
+
+.driftSection h2,
+.trendSection h2,
+.tableSection h2,
+.sparkSection h2 {
+  display: flex;
+  align-items: center;
+  gap: 0.45rem;
+  font-size: 0.95rem;
+  margin-bottom: 0.75rem;
+}
+
+.driftList {
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.driftList button {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.75rem 1rem;
+  text-align: left;
+  background: rgba(251, 191, 36, 0.08);
+  border: 1px solid rgba(251, 191, 36, 0.35);
+  border-radius: 10px;
+  color: var(--text);
+}
+
+.driftReason {
+  flex: 1;
+  font-size: 0.82rem;
+  color: var(--text-muted);
+}
+
+.scorePill {
+  font-weight: 700;
+  font-family: var(--mono);
+  color: var(--warning);
+}
+
+.trendSub {
+  font-size: 0.82rem;
+  color: var(--text-muted);
+  margin-bottom: 1rem;
+}
+
+.barChart {
+  display: flex;
+  align-items: flex-end;
+  gap: 0.65rem;
+  height: 140px;
+  padding: 1rem;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+}
+
+.barCol {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  height: 100%;
+  min-width: 0;
+}
+
+.bar {
+  width: 100%;
+  max-width: 48px;
+  margin-top: auto;
+  background: linear-gradient(180deg, var(--accent), var(--accent-secondary));
+  border-radius: 4px 4px 0 0;
+  min-height: 4px;
+}
+
+.barLabel {
+  font-size: 0.65rem;
+  color: var(--text-muted);
+  margin-top: 0.4rem;
+}
+
+.barScore {
+  font-size: 0.72rem;
+  font-family: var(--mono);
+  color: var(--accent);
+}
+
+.tableWrap {
+  overflow-x: auto;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+}
+
+.tableWrap table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.82rem;
+}
+
+.tableWrap th,
+.tableWrap td {
+  padding: 0.65rem 0.85rem;
+  text-align: left;
+  border-bottom: 1px solid var(--border);
+}
+
+.tableWrap th {
+  background: var(--bg-elevated);
+  font-size: 0.68rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--text-muted);
+}
+
+.tableWrap tbody tr {
+  cursor: pointer;
+}
+
+.tableWrap tbody tr:hover {
+  background: var(--surface-hover);
+}
+
+.rowAlert {
+  background: rgba(248, 113, 113, 0.06);
+}
+
+.tableWrap td strong {
+  display: block;
+  margin-bottom: 0.15rem;
+}
+
+.tableWrap code {
+  font-size: 0.7rem;
+  color: var(--text-muted);
+}
+
+.scoreBadge {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 0.25rem;
+  font-weight: 700;
+  font-family: var(--mono);
+  padding: 0.15rem 0.45rem;
+  border-radius: 6px;
+}
+
+.score_good {
+  background: rgba(52, 211, 153, 0.15);
+  color: var(--success);
+}
+
+.score_mid {
+  background: rgba(251, 191, 36, 0.15);
+  color: var(--warning);
+}
+
+.score_low {
+  background: rgba(248, 113, 113, 0.15);
+  color: var(--danger);
+}
+
+.scoreBadge small {
+  font-size: 0.65rem;
+  opacity: 0.8;
+}
+
+.syncOk {
+  color: var(--success);
+  font-size: 0.78rem;
+}
+
+.syncBad {
+  color: var(--warning);
+  font-size: 0.78rem;
+}
+
+.muted {
+  color: var(--text-muted);
+}
+
+.na {
+  color: var(--text-muted);
+}
+
+.deltaUp {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.1rem;
+  color: var(--success);
+  font-weight: 600;
+}
+
+.deltaDown {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.1rem;
+  color: var(--danger);
+  font-weight: 600;
+}
+
+.empty {
+  padding: 2rem;
+  text-align: center;
+  color: var(--text-muted);
+}
+
+.sparkGrid {
+  list-style: none;
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+  gap: 0.65rem;
+}
+
+.sparkGrid a {
+  display: grid;
+  grid-template-columns: 1fr auto auto;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.75rem 1rem;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  color: var(--text);
+}
+
+.sparkGrid a:hover {
+  border-color: var(--border-bright);
+}
+
+.sparkName {
+  font-weight: 600;
+  font-size: 0.85rem;
+}
+
+.sparkline {
+  display: flex;
+  align-items: flex-end;
+  gap: 2px;
+  height: 28px;
+  width: 56px;
+}
+
+.sparkline span {
+  flex: 1;
+  background: var(--accent);
+  border-radius: 2px 2px 0 0;
+  min-height: 2px;
+  opacity: 0.85;
+}
+
+.sparkLatest {
+  font-family: var(--mono);
+  font-size: 0.85rem;
+  color: var(--accent);
+}

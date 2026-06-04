@@ -1,5 +1,5 @@
 import type { LucideIcon } from "lucide-react";
-import { Braces, CreditCard, FolderGit2 } from "lucide-react";
+import { Braces, CreditCard, FolderGit2, LayoutDashboard } from "lucide-react";
 
 export type SpecwrightNavItem = {
   to: string;
@@ -10,7 +10,8 @@ export type SpecwrightNavItem = {
 };
 
 export const SPECWRIGHT_NAV: SpecwrightNavItem[] = [
-  { to: "/", label: "Projects", icon: FolderGit2, end: true },
+  { to: "/dashboard", label: "Team", icon: LayoutDashboard },
+  { to: "/", label: "Connect", icon: FolderGit2, end: true },
   { to: "/billing", label: "Billing", icon: CreditCard },
   { to: "/api", label: "API", icon: Braces },
 ];

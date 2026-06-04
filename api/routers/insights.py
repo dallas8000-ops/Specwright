@@ -8,10 +8,18 @@ from sqlalchemy.orm import selectinload
 from api.core.config import settings
 from api.core.database import get_db
 from api.models.tables import Artifact, Project, Scan
-from api.schemas import CiTemplateOut, HealthOut, NotionPushIn, RoadmapOut, SlackAlertIn
+from api.schemas import (
+    CiTemplateOut,
+    HealthOut,
+    NotionPushIn,
+    RoadmapOut,
+    SlackAlertIn,
+    TeamDashboardOut,
+)
 from api.services.alerts import notify_drift
 from api.services.ci_template import generate_github_action
 from api.services.health_score import build_project_health
+from api.services.team_dashboard import build_team_dashboard
 
 router = APIRouter(tags=["insights"])
 
@@ -22,6 +30,12 @@ ROADMAP = [
     {"name": "Ruby on Rails", "status": "planned", "detail": "routes.rb + ActiveRecord"},
     {"name": "Laravel", "status": "planned", "detail": "Route list + Eloquent models"},
 ]
+
+
+@router.get("/dashboard", response_model=TeamDashboardOut)
+async def team_dashboard(db: AsyncSession = Depends(get_db)):
+    """Multi-project scores, weekly drift, and team coverage trends."""
+    return await build_team_dashboard(db)
 
 
 @router.get("/roadmap", response_model=RoadmapOut)

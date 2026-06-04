@@ -298,3 +298,65 @@ class NotionPushIn(BaseModel):
     notion_token: str | None = None
     parent_page_id: str | None = None
     title: str | None = None
+
+
+class TeamDashboardSummary(BaseModel):
+    total_projects: int
+    scored_projects: int
+    avg_score: int | None = None
+    avg_documentation_pct: float | None = None
+    avg_test_coverage_pct: float | None = None
+    drifted_this_week: int
+    needs_attention: int
+
+
+class ProjectDashboardRow(BaseModel):
+    id: int
+    name: str
+    root_path: str
+    framework: str
+    github_repo: str | None = None
+    watch_enabled: bool = False
+    score: int | None = None
+    grade: str | None = None
+    last_scanned_at: str | None = None
+    documentation_pct: float | None = None
+    test_coverage_pct: float | None = None
+    routes_found: int = 0
+    drift_detected: bool = False
+    spec_in_sync: bool = True
+    commits_behind: int = 0
+    score_delta_7d: int | None = None
+    needs_attention: bool = False
+    never_scanned: bool = False
+    drift_this_week: bool = False
+
+
+class DriftedProjectRow(ProjectDashboardRow):
+    reason: str
+
+
+class TrendWeek(BaseModel):
+    week: str
+    label: str
+    avg_score: int
+    scan_count: int
+
+
+class ScorePoint(BaseModel):
+    at: str | None
+    score: int
+
+
+class ProjectTrend(BaseModel):
+    project_id: int
+    project_name: str
+    points: list[ScorePoint]
+
+
+class TeamDashboardOut(BaseModel):
+    summary: TeamDashboardSummary
+    projects: list[ProjectDashboardRow]
+    drifted_this_week: list[DriftedProjectRow]
+    team_trend: list[TrendWeek]
+    project_trends: list[ProjectTrend]

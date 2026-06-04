@@ -171,6 +171,19 @@
   margin-top: 0.25rem;
 }
 
+.teamCta {
+  margin-bottom: 1.5rem;
+  padding: 0.85rem 1.1rem;
+  background: var(--accent-dim);
+  border: 1px solid rgba(34, 211, 238, 0.35);
+  border-radius: var(--radius);
+  font-size: 0.9rem;
+}
+
+.teamCta a {
+  font-weight: 600;
+}
+
 .recent {
   margin-top: 2rem;
 }

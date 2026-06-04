@@ -204,3 +204,51 @@ export async function pushNotion(projectId: number, body?: { title?: string }) {
 export async function setSlackWebhook(projectId: number, webhook_url: string) {
   return specwright.post(`/projects/${projectId}/alerts/slack`, { webhook_url });
 }
+
+export interface TeamDashboardSummary {
+  total_projects: number;
+  scored_projects: number;
+  avg_score: number | null;
+  avg_documentation_pct: number | null;
+  avg_test_coverage_pct: number | null;
+  drifted_this_week: number;
+  needs_attention: number;
+}
+
+export interface ProjectDashboardRow {
+  id: number;
+  name: string;
+  root_path: string;
+  framework: string;
+  github_repo?: string | null;
+  watch_enabled: boolean;
+  score: number | null;
+  grade?: string | null;
+  last_scanned_at?: string | null;
+  documentation_pct?: number | null;
+  test_coverage_pct?: number | null;
+  routes_found: number;
+  drift_detected: boolean;
+  spec_in_sync: boolean;
+  commits_behind: number;
+  score_delta_7d?: number | null;
+  needs_attention: boolean;
+  never_scanned: boolean;
+  drift_this_week: boolean;
+}
+
+export interface TeamDashboard {
+  summary: TeamDashboardSummary;
+  projects: ProjectDashboardRow[];
+  drifted_this_week: (ProjectDashboardRow & { reason: string })[];
+  team_trend: { week: string; label: string; avg_score: number; scan_count: number }[];
+  project_trends: {
+    project_id: number;
+    project_name: string;
+    points: { at: string | null; score: number }[];
+  }[];
+}
+
+export async function fetchTeamDashboard(): Promise<TeamDashboard> {
+  return (await specwright.get<TeamDashboard>("/dashboard")).data;
+}

@@ -120,6 +120,16 @@ export default function HomePage() {
       )}
 
       {projects && projects.length > 0 && (
+        <section className={styles.teamCta}>
+          <p>
+            Managing multiple repos?{" "}
+            <Link to="/dashboard">Open the team dashboard</Link> for scores, weekly drift,
+            and coverage trends.
+          </p>
+        </section>
+      )}
+
+      {projects && projects.length > 0 && (
         <section className={styles.recent}>
           <h3>Recent projects</h3>
           <ul>

@@ -6,7 +6,7 @@
 
 <p align="center">
   <a href="https://github.com/dallas8000-ops/Specwright-">Repository</a>
-  · AST-grounded OpenAPI · Specwright Score · Watch mode · PR migration notes
+  · Team dashboard · Specwright Score · Watch mode · Grounded AI
 </p>
 
 <p align="center">
@@ -14,19 +14,22 @@
   <img src="https://img.shields.io/badge/FastAPI-API-009688?logo=fastapi&logoColor=white" alt="FastAPI" />
   <img src="https://img.shields.io/badge/React-Vite-61DAFB?logo=react&logoColor=black" alt="React + Vite" />
   <img src="https://img.shields.io/badge/OpenAPI-3.1-6BA539?logo=openapiinitiative&logoColor=white" alt="OpenAPI 3.1" />
+  <img src="https://img.shields.io/badge/Team-dashboard-live-22D3EE" alt="Team dashboard" />
   <img src="https://img.shields.io/badge/AI-grounded-Pro-8B5CF6" alt="Grounded AI (Pro)" />
 </p>
 
-> **Repo tagline (for GitHub About):** *AST-synced API docs, OpenAPI, tests, and Specwright Score for FastAPI teams — with PR-aware migration notes.*
+> **Repo tagline (for GitHub About):** *AST-synced API docs, OpenAPI, tests, and Specwright Score across all your repos — with a team dashboard, weekly drift alerts, and PR migration notes.*
 
 Specwright reads your codebase (**AST analysis**, not guesswork) and keeps **OpenAPI**, **markdown API reference**, **pytest scaffolds**, and **ER diagrams** aligned with your routes and models. Swagger, Redoc, and Postman assume you maintain the spec by hand. Specwright attaches to the repo and updates artifacts on scan or on save.
+
 ## What problem it solves
 
 | Pain | How Specwright helps |
 |------|----------------------|
 | Docs drift after every PR | Watch mode re-scans and writes `docs/openapi.yaml`, tests, and markdown to disk |
+| No visibility across repos | **Team dashboard** — all projects, scores, weekly drift, coverage trends |
 | No one knows test/doc coverage | **Specwright Score** (0–100) + per-route health (docs, tests, sync) |
-| Reviewers miss API changes | PR comments and OpenAPI diff: new/removed paths, score, gaps |
+| Reviewers miss API changes | PR comments, OpenAPI diff, **client migration notes** (Pro + AI) |
 | CI ships stale specs | `specwright.yml` template fails the build when committed OpenAPI lags code |
 | Docs live in three places | One scan → OpenAPI, markdown, Notion export, GitHub comment |
 
@@ -34,6 +37,7 @@ Specwright reads your codebase (**AST analysis**, not guesswork) and keeps **Ope
 
 | Feature | What it does |
 |---------|----------------|
+| **Team dashboard** | All repos in one view: scores, 7-day deltas, drift-this-week, team & per-repo trends |
 | **Specwright Score** | Weighted health: API docs, test coverage, spec freshness, model docs |
 | **Route health dashboard** | Method badges, coverage labels, metric cards, action banners |
 | **Watch + live sync** | Polls the tree (~3s); SSE updates; writes artifacts into the repo |
@@ -41,10 +45,24 @@ Specwright reads your codebase (**AST analysis**, not guesswork) and keeps **Ope
 | **Drift + Slack** | Alerts when on-disk spec is behind code |
 | **CI template** | `GET /projects/{id}/ci-template` → GitHub Action yaml |
 | **Notion export** | Push latest API markdown to a Notion page |
+| **Grounded AI suite** (Pro) | Description fill, migration notes, test bodies, scoped chat — see below |
 | **AI polish** (Pro) | LLM improves markdown grammar/clarity — paths stay exact |
-| **Grounded AI suite** (Pro) | Descriptions, migration notes, test bodies, scoped chat — see below |
 
 Deterministic scan/score/CI stays AST-based. LLM features are gated on `SPECWRIGHT_AI_API_KEY` + Pro plan.
+
+## Team dashboard (multi-repo)
+
+Built for tech leads and EMs overseeing **3–8 codebases**. Open **Team** in the app or `GET /api/v1/dashboard`.
+
+| View | What you see |
+|------|----------------|
+| **Summary** | Project count, avg Specwright Score, avg doc/test coverage, drifted-this-week |
+| **Drifted this week** | Repos with spec drift, stale scans (>7 days), or never scanned |
+| **All projects** | Sortable table: score, 7d Δ, doc %, test %, sync status, last scan |
+| **Team score trend** | Weekly average score from scan history (last 8 weeks) |
+| **Per-repo history** | Sparklines from recent scans — no extra storage required |
+
+Connect each repo on **Connect** (`/`), run **Generate artifacts**, then review the portfolio on `/dashboard`.
 
 ## Grounded AI (Pro / Enterprise)
 
@@ -63,9 +81,7 @@ Deterministic scan/score/CI stays AST-based. LLM features are gated on `SPECWRIG
 
 GitHub PR comments automatically include **breaking-change triage**, **migration note** (when AI is configured), and **reconcile counts**.
 
-**Auto on scan (Pro + `SPECWRIGHT_AI_API_KEY`):** weak OpenAPI descriptions are filled from docstrings; when the spec diff shows route changes, a **client migration note** is generated and shown on the Score dashboard (and in PR comments). Disable with `SPECWRIGHT_AI_AUTO_ON_SCAN=false`.
-
-UI: project page → Score banners + **Grounded AI** panel for manual reruns.
+**Auto on scan (Pro + `SPECWRIGHT_AI_API_KEY`):** weak OpenAPI descriptions are filled from docstrings; when the spec diff shows route changes, a **client migration note** is generated on the Score dashboard and in PR comments. Disable with `SPECWRIGHT_AI_AUTO_ON_SCAN=false`.
 
 ## Framework support
 
@@ -80,7 +96,7 @@ UI: project page → Score banners + **Grounded AI** panel for manual reruns.
 ## Architecture
 
 ```
-AutomationFlow/
+Specwright-/
 ├── api/          # Specwright backend (FastAPI, port 8080)
 ├── frontend/     # React + Vite UI (port 5173+)
 ├── backend/      # Legacy Django app (not wired in current UI)
@@ -94,8 +110,9 @@ AutomationFlow/
 
 | Path | Purpose |
 |------|---------|
+| `/dashboard` | **Team dashboard** — all projects, scores, weekly drift, trends |
 | `/` | Connect codebase, recent projects, roadmap |
-| `/project/:id` | Specwright Score, integrations, artifact viewer |
+| `/project/:id` | Specwright Score, Grounded AI, integrations, artifacts |
 | `/billing` | Starter / Pro / Enterprise pricing |
 | `/api` | In-app API hub (Swagger, ReDoc, health, product) |
 
@@ -124,11 +141,12 @@ cd frontend; npm run dev
 ```
 
 1. Open http://localhost:5173  
-2. **Analyze codebase** — use an absolute path (e.g. `...\AutomationFlow\api`)  
-3. **Generate artifacts** on the project page  
-4. Optional: enable **Watch**, connect **GitHub**, set **Slack**, export **CI yaml**
+2. **Connect** — add one or more codebases (absolute paths)  
+3. **Generate artifacts** on each project  
+4. Open **Team** (`/dashboard`) for portfolio scores and drift  
+5. Optional: **Watch**, **GitHub**, **Slack**, **CI yaml**, **AI** (Pro)
 
-Demo target: scan the `api/` folder in this repo.
+Demo target: scan the `api/` folder in this repo twice to see score trends and PR diff.
 
 ## API reference
 
@@ -136,12 +154,15 @@ Demo target: scan the `api/` folder in this repo.
 |----------|-------------|
 | `GET /api/v1/health` | Liveness |
 | `GET /api/v1/product` | Product metadata |
+| `GET /api/v1/dashboard` | Multi-project scores, drift, team trends |
 | `GET /api/v1/roadmap` | Framework roadmap |
 | `GET /api/v1/docs` | Swagger UI |
 | `POST /api/v1/projects` | Register codebase path |
 | `POST /api/v1/projects/{id}/scan` | Run analyzers |
 | `GET /api/v1/projects/{id}/health` | Score + coverage + alerts |
 | `GET /api/v1/projects/{id}/ai/suite` | AI insight summary |
+| `POST /api/v1/projects/{id}/ai/descriptions` | Fill OpenAPI descriptions (Pro) |
+| `POST /api/v1/projects/{id}/ai/migration-note` | PR migration note (Pro) |
 | `POST /api/v1/projects/{id}/ai/chat` | Scoped how-to Q&A (Pro) |
 | `GET /api/v1/projects/{id}/watch/events` | SSE watch stream |
 | `POST /api/v1/github/webhook` | PR-triggered rescan + comment |
@@ -152,8 +173,8 @@ Full list: UI **API** tab or http://localhost:8080
 
 | Tier | Price | Highlights |
 |------|-------|------------|
-| Starter | $29/mo | Scans, watch, exports, CI artifacts |
-| Pro | $79/mo | + AI polish, GitHub PR automation |
+| Starter | $29/mo | Scans, watch, exports, CI artifacts, team dashboard |
+| Pro | $79/mo | + Grounded AI, auto description fill & migration notes, GitHub PR automation |
 | Enterprise | Custom | SSO, SLA, dedicated support |
 
 Configure display prices with `SPECWRIGHT_STARTER_PRICE_USD` / `SPECWRIGHT_PRO_PRICE_USD`.
@@ -173,10 +194,11 @@ SPECWRIGHT_PRO_PRICE_USD=79
 SPECWRIGHT_GITHUB_TOKEN=
 SPECWRIGHT_GITHUB_WEBHOOK_SECRET=
 
-# AI polish (Pro+) — OpenAI-compatible API
+# AI (Pro+) — OpenAI-compatible API
 SPECWRIGHT_AI_API_KEY=
 SPECWRIGHT_AI_API_BASE_URL=https://api.openai.com/v1
 SPECWRIGHT_AI_MODEL=gpt-4o-mini
+SPECWRIGHT_AI_AUTO_ON_SCAN=true
 
 # Integrations
 SPECWRIGHT_SLACK_WEBHOOK_URL=

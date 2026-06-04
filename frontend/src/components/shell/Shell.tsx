@@ -8,7 +8,7 @@ export default function Shell() {
   return (
     <div className={styles.layout}>
       <header className={styles.header}>
-        <Link to="/" className={styles.brand}>
+        <Link to="/dashboard" className={styles.brand}>
           <span className={styles.mark}>
             <Zap size={16} />
           </span>
