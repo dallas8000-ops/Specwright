@@ -1,0 +1,243 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Specwright API</title>
+  <style>
+    :root {
+      color-scheme: dark;
+      --bg: #0f1419;
+      --bg-elevated: #161f2e;
+      --surface: #1c2638;
+      --border: #2d3f5c;
+      --border-bright: #3d5270;
+      --text: #f1f5f9;
+      --text-muted: #94a3b8;
+      --accent: #22d3ee;
+      --accent-secondary: #a78bfa;
+      --success: #34d399;
+      --radius: 12px;
+      --mono: "JetBrains Mono", "Fira Code", monospace;
+      --font: "DM Sans", system-ui, sans-serif;
+      --glow: 0 0 40px rgba(34, 211, 238, 0.12);
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: var(--font);
+      background: var(--bg);
+      color: var(--text);
+      line-height: 1.55;
+      min-height: 100vh;
+    }
+    body::before {
+      content: "";
+      position: fixed;
+      inset: 0;
+      background:
+        radial-gradient(ellipse 80% 50% at 50% -20%, rgba(34, 211, 238, 0.12), transparent),
+        radial-gradient(ellipse 60% 40% at 100% 50%, rgba(167, 139, 250, 0.08), transparent);
+      pointer-events: none;
+    }
+    .wrap {
+      position: relative;
+      max-width: 720px;
+      margin: 0 auto;
+      padding: 2rem 1.5rem 3rem;
+    }
+    header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 1rem;
+      padding-bottom: 1.25rem;
+      margin-bottom: 2rem;
+      border-bottom: 1px solid var(--border);
+    }
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+      text-decoration: none;
+      color: var(--text);
+    }
+    .mark {
+      width: 36px;
+      height: 36px;
+      border-radius: 10px;
+      background: linear-gradient(135deg, var(--accent), var(--accent-secondary));
+      display: grid;
+      place-items: center;
+      font-size: 1rem;
+      box-shadow: var(--glow);
+    }
+    .brand strong { display: block; font-size: 1rem; letter-spacing: -0.02em; }
+    .brand span { font-size: 0.75rem; color: var(--text-muted); }
+    nav { display: flex; flex-wrap: wrap; gap: 0.5rem; }
+    nav a {
+      font-size: 0.85rem;
+      color: var(--text-muted);
+      text-decoration: none;
+      padding: 0.4rem 0.75rem;
+      border: 1px solid var(--border);
+      border-radius: 8px;
+    }
+    nav a:hover { color: var(--accent); border-color: var(--border-bright); }
+    .eyebrow {
+      font-family: var(--mono);
+      font-size: 0.75rem;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      color: var(--accent);
+      margin-bottom: 0.75rem;
+    }
+    h1 {
+      font-size: clamp(1.75rem, 4vw, 2.25rem);
+      font-weight: 700;
+      letter-spacing: -0.03em;
+      margin-bottom: 0.75rem;
+    }
+    h1 em {
+      font-style: normal;
+      background: linear-gradient(90deg, var(--accent), var(--accent-secondary));
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+    .lead {
+      color: var(--text-muted);
+      font-size: 1.05rem;
+      max-width: 42ch;
+      margin-bottom: 1.75rem;
+    }
+    .status {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.4rem;
+      font-size: 0.8rem;
+      font-weight: 600;
+      color: var(--success);
+      background: rgba(52, 211, 153, 0.12);
+      border: 1px solid rgba(52, 211, 153, 0.35);
+      padding: 0.35rem 0.75rem;
+      border-radius: 999px;
+      margin-bottom: 1.5rem;
+    }
+    .grid {
+      display: grid;
+      gap: 0.75rem;
+    }
+    .card {
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+      gap: 1rem;
+      padding: 1rem 1.15rem;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      text-decoration: none;
+      color: var(--text);
+      transition: border-color 0.15s, box-shadow 0.15s;
+    }
+    .card:hover {
+      border-color: var(--border-bright);
+      box-shadow: var(--glow);
+    }
+    .card strong { display: block; font-size: 0.95rem; margin-bottom: 0.2rem; }
+    .card p { font-size: 0.82rem; color: var(--text-muted); }
+    .card code {
+      font-family: var(--mono);
+      font-size: 0.72rem;
+      color: var(--accent);
+      white-space: nowrap;
+    }
+    .note {
+      margin-top: 1.5rem;
+      font-size: 0.8rem;
+      color: var(--text-muted);
+      padding: 0.85rem 1rem;
+      background: var(--bg-elevated);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+    }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <header>
+      <a class="brand" href="{{frontend_url}}">
+        <span class="mark">⚡</span>
+        <div>
+          <strong>Specwright</strong>
+          <span>API server</span>
+        </div>
+      </a>
+      <nav>
+        <a href="{{frontend_url}}">Projects</a>
+        <a href="{{frontend_url}}/billing">Billing</a>
+        <a href="{{frontend_url}}/api">API hub</a>
+      </nav>
+    </header>
+
+    <p class="eyebrow">Backend · port 8080</p>
+    <h1>Specwright <em>API</em></h1>
+    <p class="lead">
+      FastAPI service for scans, health scores, watch mode, and integrations.
+      The main workspace runs in the web app.
+    </p>
+    <p class="status"><span aria-hidden>●</span> Server running</p>
+
+    <div class="grid">
+      <a class="card" href="/api/v1/docs">
+        <div>
+          <strong>Swagger UI</strong>
+          <p>Interactive REST explorer for all endpoints.</p>
+        </div>
+        <code>/api/v1/docs</code>
+      </a>
+      <a class="card" href="/api/v1/redoc">
+        <div>
+          <strong>ReDoc</strong>
+          <p>Readable reference documentation.</p>
+        </div>
+        <code>/api/v1/redoc</code>
+      </a>
+      <a class="card" href="/api/v1/openapi.json">
+        <div>
+          <strong>OpenAPI schema</strong>
+          <p>Machine-readable Specwright API definition.</p>
+        </div>
+        <code>openapi.json</code>
+      </a>
+      <a class="card" href="/api/v1/health">
+        <div>
+          <strong>Health check</strong>
+          <p>Liveness probe for CI and load balancers.</p>
+        </div>
+        <code>/api/v1/health</code>
+      </a>
+      <a class="card" href="/api/v1/product">
+        <div>
+          <strong>Product metadata</strong>
+          <p>Tagline, outputs, and shipped roadmap items.</p>
+        </div>
+        <code>/api/v1/product</code>
+      </a>
+      <a class="card" href="/api/v1/roadmap">
+        <div>
+          <strong>Framework roadmap</strong>
+          <p>Supported and planned framework analyzers.</p>
+        </div>
+        <code>/api/v1/roadmap</code>
+      </a>
+    </div>
+
+    <p class="note">
+      Open the <a href="{{frontend_url}}" style="color: var(--accent)">Specwright UI</a>
+      at {{frontend_url}} for projects, Specwright Score, and artifact generation.
+      Swagger may need network access for CDN assets.
+    </p>
+  </div>
+</body>
+</html>

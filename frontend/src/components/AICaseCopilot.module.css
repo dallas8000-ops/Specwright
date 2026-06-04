@@ -1,0 +1,104 @@
+.panel {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 1rem;
+  margin-top: 1rem;
+}
+
+header {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin-bottom: 0.75rem;
+  font-weight: 600;
+  font-size: 0.9rem;
+}
+
+.triageBtn {
+  margin-left: auto;
+  background: rgba(99, 102, 241, 0.2);
+  border: 1px solid #6366f1;
+  color: #a5b4fc;
+  padding: 0.35rem 0.65rem;
+  border-radius: 6px;
+  font-size: 0.8rem;
+}
+
+.assessment {
+  background: var(--surface-elevated);
+  border-radius: 8px;
+  padding: 0.85rem;
+  margin-bottom: 0.75rem;
+}
+
+.summary {
+  font-size: 0.9rem;
+  margin-bottom: 0.65rem;
+}
+
+.risk {
+  display: flex;
+  gap: 0.5rem;
+  margin-bottom: 0.5rem;
+  font-size: 0.82rem;
+}
+
+.risk p {
+  color: var(--text-muted);
+}
+
+.critical {
+  color: var(--danger);
+}
+
+.warning {
+  color: var(--warning);
+}
+
+.next {
+  margin-top: 0.65rem;
+  font-size: 0.88rem;
+}
+
+.chat {
+  max-height: 140px;
+  overflow-y: auto;
+  margin-bottom: 0.5rem;
+}
+
+.user,
+.assistant {
+  font-size: 0.82rem;
+  padding: 0.4rem 0.55rem;
+  border-radius: 6px;
+  margin-bottom: 0.35rem;
+}
+
+.user {
+  background: rgba(59, 130, 246, 0.12);
+  margin-left: 1rem;
+}
+
+.assistant {
+  background: var(--surface-elevated);
+  margin-right: 1rem;
+}
+
+.inputRow {
+  display: flex;
+  gap: 0.4rem;
+}
+
+.inputRow input {
+  flex: 1;
+  font-size: 0.85rem;
+}
+
+.inputRow button {
+  background: var(--accent);
+  color: white;
+  border: none;
+  border-radius: 6px;
+  padding: 0.4rem 0.75rem;
+}

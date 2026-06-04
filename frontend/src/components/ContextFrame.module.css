@@ -1,0 +1,47 @@
+.frame {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 0.65rem;
+  margin-bottom: 1.5rem;
+}
+
+@media (max-width: 1000px) {
+  .frame {
+    grid-template-columns: 1fr 1fr;
+  }
+}
+
+.cell {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 1rem;
+}
+
+.cell span {
+  display: block;
+  font-size: 0.65rem;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--text-muted);
+  margin-bottom: 0.4rem;
+  font-weight: 600;
+}
+
+.cell p {
+  font-size: 0.88rem;
+  line-height: 1.45;
+}
+
+.why {
+  border-color: rgba(251, 191, 36, 0.25);
+}
+
+.next {
+  border-color: rgba(34, 211, 238, 0.35);
+  background: var(--accent-dim);
+}
+
+.next p {
+  font-weight: 500;
+}

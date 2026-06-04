@@ -1,0 +1,26 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="color-scheme" content="dark" />
+    <title>Specwright - Docs, tests and diagrams from code</title>
+    <style>
+      html, body { margin: 0; min-height: 100%; background: #0f1419; color: #f1f5f9; }
+      #root:empty::after {
+        content: "Loading Specwright…";
+        display: block;
+        padding: 3rem 2rem;
+        font: 500 1.1rem "DM Sans", system-ui, sans-serif;
+        color: #22d3ee;
+      }
+    </style>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,400;0,9..40,500;0,9..40,600;0,9..40,700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet" />
+  </head>
+  <body>
+    <div id="root"></div>
+    <script type="module" src="/src/main.tsx"></script>
+  </body>
+</html>

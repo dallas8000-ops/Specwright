@@ -1,0 +1,40 @@
+.header {
+  margin-bottom: 1.25rem;
+}
+
+.header h2 {
+  font-size: 1.5rem;
+}
+
+.header p {
+  color: var(--text-muted);
+}
+
+.grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+  gap: 1rem;
+}
+
+.card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 1.25rem;
+}
+
+.kind {
+  font-family: var(--mono);
+  font-size: 0.7rem;
+  color: var(--accent);
+  text-transform: uppercase;
+}
+
+.card h3 {
+  margin: 0.5rem 0 0.25rem;
+}
+
+.card p {
+  color: var(--text-muted);
+  font-size: 0.85rem;
+}
