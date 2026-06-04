@@ -1,9 +1,25 @@
 # Specwright
 
-**The documentation layer for FastAPI teams — automatically.**
+<p align="center">
+  <strong>The documentation layer for FastAPI teams — automatically.</strong>
+</p>
 
-Specwright reads your codebase (AST analysis, not guesswork) and keeps **OpenAPI**, **markdown API reference**, **pytest scaffolds**, and **ER diagrams** aligned with your routes and models. Swagger, Redoc, and Postman assume you maintain the spec by hand. Specwright attaches to the repo and updates artifacts on scan or on save.
+<p align="center">
+  <a href="https://github.com/dallas8000-ops/Specwright-">Repository</a>
+  · AST-grounded OpenAPI · Specwright Score · Watch mode · PR migration notes
+</p>
 
+<p align="center">
+  <img src="https://img.shields.io/badge/Python-3.11+-3776AB?logo=python&logoColor=white" alt="Python 3.11+" />
+  <img src="https://img.shields.io/badge/FastAPI-API-009688?logo=fastapi&logoColor=white" alt="FastAPI" />
+  <img src="https://img.shields.io/badge/React-Vite-61DAFB?logo=react&logoColor=black" alt="React + Vite" />
+  <img src="https://img.shields.io/badge/OpenAPI-3.1-6BA539?logo=openapiinitiative&logoColor=white" alt="OpenAPI 3.1" />
+  <img src="https://img.shields.io/badge/AI-grounded-Pro-8B5CF6" alt="Grounded AI (Pro)" />
+</p>
+
+> **Repo tagline (for GitHub About):** *AST-synced API docs, OpenAPI, tests, and Specwright Score for FastAPI teams — with PR-aware migration notes.*
+
+Specwright reads your codebase (**AST analysis**, not guesswork) and keeps **OpenAPI**, **markdown API reference**, **pytest scaffolds**, and **ER diagrams** aligned with your routes and models. Swagger, Redoc, and Postman assume you maintain the spec by hand. Specwright attaches to the repo and updates artifacts on scan or on save.
 ## What problem it solves
 
 | Pain | How Specwright helps |
@@ -88,7 +104,16 @@ Backend landing (same visual language): http://localhost:8080
 ## Quick start
 
 ```powershell
-cd "c:\Software Projects\AutomationFlow"
+git clone https://github.com/dallas8000-ops/Specwright-.git
+cd Specwright-
+copy .env.specwright.example .env
+
+# API venv (first time)
+python -m venv api\.venv
+api\.venv\Scripts\pip install -r api\requirements.txt
+
+# UI (first time)
+cd frontend; npm install; cd ..
 
 # One-shot dev (two terminal windows)
 .\scripts\dev.ps1
