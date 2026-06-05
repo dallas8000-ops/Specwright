@@ -14,7 +14,7 @@ services:
       - key: SPECWRIGHT_DEBUG
         value: "false"
       - key: SPECWRIGHT_DATABASE_URL
-        value: sqlite+aiosqlite:///tmp/specwright.db
+        value: sqlite+aiosqlite:///specwright.db
       - key: SPECWRIGHT_FRONTEND_URL
         sync: false
       - key: SPECWRIGHT_PUBLIC_API_URL
