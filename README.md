@@ -37,6 +37,7 @@ Specwright reads your codebase (**AST analysis**, not guesswork) and keeps **Ope
 
 | Feature | What it does |
 |---------|----------------|
+| **Public score badge** | Shields-style SVG for GitHub READMEs — viral discovery (Codecov / Snyk pattern) |
 | **Team dashboard** | All repos in one view: scores, 7-day deltas, drift-this-week, team & per-repo trends |
 | **Specwright Score** | Weighted health: API docs, test coverage, spec freshness, model docs |
 | **Route health dashboard** | Method badges, coverage labels, metric cards, action banners |
@@ -64,6 +65,25 @@ Built for tech leads and EMs overseeing **3–8 codebases**. Open **Team** in th
 
 Connect each repo on **Connect** (`/`), run **Generate artifacts**, then review the portfolio on `/dashboard`.
 
+## Public score badge (README embed)
+
+After a scan, open any project → **README score badge** → copy markdown into your repo:
+
+```markdown
+[![Specwright Score 84](http://localhost:8080/api/v1/badge/project-a1b2c3d4e5f6.svg)](http://localhost:8080/api/v1/p/project-a1b2c3d4e5f6)
+```
+
+| URL | Purpose |
+|-----|---------|
+| `GET /api/v1/badge/{slug}.svg` | Badge image (public, cacheable) |
+| `GET /badge/{slug}.svg` | Short alias (302 → above) |
+| `GET /api/v1/p/{slug}` | Landing page when visitors click the badge |
+| `GET /api/v1/projects/{id}/badge-embed` | Markdown snippet + hosted URL hints |
+
+Each project gets a stable `public_slug` (e.g. `project-a1b2c3d4e5f6`). When you deploy to production, point `SPECWRIGHT_PUBLIC_API_URL` at your API host so READMEs use:
+
+`https://specwright.app/badge/{slug}.svg` (same path pattern as [Codecov](https://docs.codecov.com/docs) / [Snyk](https://snyk.io) badges).
+
 ## Grounded AI (Pro / Enterprise)
 
 **AST owns truth; AI owns prose.** All features use routes from the last scan — unknown paths are rejected or flagged.
@@ -82,6 +102,23 @@ Connect each repo on **Connect** (`/`), run **Generate artifacts**, then review 
 GitHub PR comments automatically include **breaking-change triage**, **migration note** (when AI is configured), and **reconcile counts**.
 
 **Auto on scan (Pro + `SPECWRIGHT_AI_API_KEY`):** weak OpenAPI descriptions are filled from docstrings; when the spec diff shows route changes, a **client migration note** is generated on the Score dashboard and in PR comments. Disable with `SPECWRIGHT_AI_AUTO_ON_SCAN=false`.
+
+## Hosted preview (no local install)
+
+Paste a public **GitHub URL** and get a Specwright Score without connecting a local path.
+
+| Step | Action |
+|------|--------|
+| UI | Open **Try GitHub** (`/try`) or call the API |
+| API | `POST /api/v1/hosted/preview` with `{ "github_url": "https://github.com/org/repo" }` |
+| Server | Requires **git** on the API host (shallow clone, 120s timeout) |
+
+This is the foundation for **`app.specwright.io`** — same scan engine, zero venv setup for evaluators. Connect the repo locally afterward for watch mode, badges, and team dashboard.
+
+Production hosted URLs (when deployed):
+
+- `https://app.specwright.io/try`
+- `https://specwright.app/badge/{slug}.svg`
 
 ## Framework support
 
@@ -117,6 +154,33 @@ Specwright-/
 | `/api` | In-app API hub (Swagger, ReDoc, health, product) |
 
 Backend landing (same visual language): http://localhost:8080
+
+## Deploy on Render
+
+Blueprint file: `render.yaml` — two services:
+
+| Service | URL (default name) | Runtime |
+|---------|-------------------|---------|
+| `specwright-api` | `https://specwright-api.onrender.com` | Docker (FastAPI + git for hosted preview) |
+| `specwright-web` | `https://specwright-web.onrender.com` | Static (Vite React) |
+
+**First deploy**
+
+1. [Render Dashboard](https://dashboard.render.com) → **New** → **Blueprint** → connect `dallas8000-ops/Specwright-`
+2. After services are created, set env vars:
+
+| Service | Variable | Value |
+|---------|----------|-------|
+| `specwright-api` | `SPECWRIGHT_FRONTEND_URL` | `https://specwright-web.onrender.com` |
+| `specwright-api` | `SPECWRIGHT_PUBLIC_API_URL` | `https://specwright-api.onrender.com` |
+| `specwright-api` | `SPECWRIGHT_PUBLIC_SITE_URL` | `https://specwright-web.onrender.com` |
+| `specwright-web` | `VITE_API_URL` | `https://specwright-api.onrender.com/api/v1` |
+
+3. **Manual Deploy** on both services (or push to `main` if auto-deploy is on).
+
+**Redeploy** — push to `main` or click **Manual Deploy → Deploy latest commit** on each service.
+
+Health check: `GET https://specwright-api.onrender.com/api/v1/health`
 
 ## Quick start
 
@@ -155,6 +219,9 @@ Demo target: scan the `api/` folder in this repo twice to see score trends and P
 | `GET /api/v1/health` | Liveness |
 | `GET /api/v1/product` | Product metadata |
 | `GET /api/v1/dashboard` | Multi-project scores, drift, team trends |
+| `GET /api/v1/badge/{slug}.svg` | Public README score badge |
+| `GET /api/v1/projects/{id}/badge-embed` | Copy-paste markdown for README |
+| `POST /api/v1/hosted/preview` | GitHub URL → Specwright Score (hosted preview) |
 | `GET /api/v1/roadmap` | Framework roadmap |
 | `GET /api/v1/docs` | Swagger UI |
 | `POST /api/v1/projects` | Register codebase path |
@@ -185,6 +252,8 @@ Copy `.env.specwright.example` to `.env` in the repo root (or set variables in t
 
 ```env
 SPECWRIGHT_FRONTEND_URL=http://localhost:5173
+SPECWRIGHT_PUBLIC_API_URL=http://localhost:8080
+SPECWRIGHT_PUBLIC_SITE_URL=http://localhost:8080
 
 # Catalog (billing page)
 SPECWRIGHT_STARTER_PRICE_USD=29

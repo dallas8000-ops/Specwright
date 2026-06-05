@@ -8,6 +8,7 @@ from sqlalchemy.orm import selectinload
 from api.core.database import get_db
 from api.models.tables import Artifact, Project, Scan
 from api.schemas import ArtifactOut, ContextOut, ProjectCreate, ProjectOut, ScanOut
+from api.services.project_slug import ensure_unique_slug
 from api.services.scan_history import previous_openapi
 from api.services.scan_runner import run_scan
 
@@ -24,6 +25,8 @@ async def create_project(body: ProjectCreate, db: AsyncSession = Depends(get_db)
         github_repo=(body.github_repo or "").strip(),
     )
     db.add(project)
+    await db.flush()
+    project.public_slug = await ensure_unique_slug(db)
     await db.commit()
     await db.refresh(project)
     return project

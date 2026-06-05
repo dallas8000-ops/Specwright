@@ -165,7 +165,7 @@ export default function ProjectAITools({
           <p>Rule-based triage of added vs removed paths (free with any scan).</p>
           {suite?.breaking_change?.items?.length ? (
             <ul className={styles.triageList}>
-              {suite.breaking_change.items.slice(0, 5).map((item) => (
+              {suite.breaking_change.items.slice(0, 5).map((item: { change: string; path: string; classification: string }) => (
                 <li key={`${item.change}-${item.path}`}>
                   <span data-class={item.classification}>{item.classification}</span>{" "}
                   <code>{item.path}</code>

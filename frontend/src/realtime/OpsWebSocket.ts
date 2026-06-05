@@ -1,4 +1,4 @@
-import type { ConnectionMessage, DomainEventEnvelope } from "./types";
+import type { DomainEventEnvelope } from "./types";
 
 type EventHandler = (event: DomainEventEnvelope) => void;
 type StatusHandler = (status: "connecting" | "connected" | "disconnected" | "error") => void;

@@ -7,7 +7,7 @@ from fastapi.responses import HTMLResponse
 
 from api.core.config import settings
 from api.core.database import init_db
-from api.routers import ai, billing, insights, integrations, projects
+from api.routers import ai, billing, hosted, insights, integrations, projects, public
 from api.services.watch_service import watch_manager
 
 
@@ -43,9 +43,14 @@ def _api_landing_html() -> str:
 async def root():
     return HTMLResponse(_api_landing_html())
 
+_cors_origins = list(settings.cors_origins)
+if settings.frontend_url and settings.frontend_url not in _cors_origins:
+    _cors_origins.append(settings.frontend_url)
+
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=settings.cors_origins,
+    allow_origins=_cors_origins,
+    allow_origin_regex=r"^https://[a-zA-Z0-9-]+\.onrender\.com$",
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -56,6 +61,19 @@ app.include_router(ai.router, prefix="/api/v1")
 app.include_router(integrations.router, prefix="/api/v1")
 app.include_router(billing.router, prefix="/api/v1")
 app.include_router(insights.router, prefix="/api/v1")
+app.include_router(public.router, prefix="/api/v1")
+app.include_router(hosted.router, prefix="/api/v1")
+
+
+@app.get("/badge/{slug}.svg", include_in_schema=False)
+async def short_badge(slug: str):
+    """Shorter README URL (maps to hosted specwright.app/badge/{slug})."""
+    from fastapi.responses import RedirectResponse
+
+    return RedirectResponse(
+        url=f"/api/v1/badge/{slug}.svg",
+        status_code=302,
+    )
 
 
 @app.get("/api/v1/health")
@@ -76,5 +94,10 @@ async def product():
             "llm_polish",
             "grounded_ai_suite",
             "stripe_billing",
+            "public_score_badge",
+            "team_dashboard",
+        ],
+        "roadmap_planned": [
+            "app_specwright_io_saas_deploy",
         ],
     }

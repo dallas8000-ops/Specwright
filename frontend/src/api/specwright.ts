@@ -1,7 +1,10 @@
 import axios from "axios";
 
+const apiBase =
+  import.meta.env.VITE_API_URL?.replace(/\/$/, "") || "/api/v1";
+
 export const specwright = axios.create({
-  baseURL: "/api/v1",
+  baseURL: apiBase,
   headers: { "Content-Type": "application/json" },
 });
 
@@ -73,10 +76,12 @@ export async function postPrComment(
   projectId: number,
   body: { pr_number: number; github_repo?: string }
 ) {
-  return specwright.post<{ posted: boolean; html_url?: string }>(
-    `/projects/${projectId}/github/pr-comment`,
-    body
-  );
+  return (
+    await specwright.post<{ posted: boolean; html_url?: string }>(
+      `/projects/${projectId}/github/pr-comment`,
+      body
+    )
+  ).data;
 }
 
 export async function polishArtifact(projectId: number, artifactId: number) {
@@ -251,4 +256,19 @@ export interface TeamDashboard {
 
 export async function fetchTeamDashboard(): Promise<TeamDashboard> {
   return (await specwright.get<TeamDashboard>("/dashboard")).data;
+}
+
+export interface BadgeEmbed {
+  public_slug: string;
+  score: number | null;
+  badge_enabled: boolean;
+  image_url: string;
+  project_url: string;
+  markdown: string;
+  hosted_image_url: string;
+  hosted_project_url: string;
+}
+
+export async function fetchBadgeEmbed(projectId: number): Promise<BadgeEmbed> {
+  return (await specwright.get<BadgeEmbed>(`/projects/${projectId}/badge-embed`)).data;
 }

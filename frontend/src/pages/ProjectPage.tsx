@@ -24,6 +24,7 @@ import ArtifactViewer from "@/components/ArtifactViewer";
 import ProjectIntegrations from "@/components/ProjectIntegrations";
 import ProjectAITools from "@/components/ProjectAITools";
 import HealthDashboard from "@/components/HealthDashboard";
+import PublicBadgeEmbed from "@/components/PublicBadgeEmbed";
 import styles from "./ProjectPage.module.css";
 
 const KIND_ICON: Record<string, typeof FileText> = {
@@ -133,6 +134,8 @@ export default function ProjectPage() {
           <p>Parsing Python · discovering routes · building OpenAPI & tests…</p>
         </div>
       )}
+
+      {latest && <PublicBadgeEmbed projectId={projectId} />}
 
       {latest && (
         <HealthDashboard

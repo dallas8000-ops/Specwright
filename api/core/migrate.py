@@ -25,6 +25,14 @@ async def run_migrations(conn: AsyncConnection) -> None:
         await conn.execute(
             text("ALTER TABLE projects ADD COLUMN last_score INTEGER DEFAULT 0")
         )
+    if "public_slug" not in cols:
+        await conn.execute(
+            text("ALTER TABLE projects ADD COLUMN public_slug VARCHAR(64) DEFAULT ''")
+        )
+    if "badge_public" not in cols:
+        await conn.execute(
+            text("ALTER TABLE projects ADD COLUMN badge_public BOOLEAN DEFAULT 1")
+        )
 
     scan_cols = await _scan_columns(conn)
     if "trigger" not in scan_cols:

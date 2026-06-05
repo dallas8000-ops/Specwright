@@ -14,6 +14,7 @@ class ProjectUpdate(BaseModel):
     watch_enabled: bool | None = None
     github_repo: str | None = None
     slack_webhook: str | None = None
+    badge_public: bool | None = None
 
 
 class ProjectOut(BaseModel):
@@ -24,7 +25,51 @@ class ProjectOut(BaseModel):
     watch_enabled: bool = False
     github_repo: str = ""
     plan: str = "starter"
+    public_slug: str = ""
+    badge_public: bool = True
+    last_score: int = 0
     created_at: datetime
+
+
+class BadgeEmbedOut(BaseModel):
+    public_slug: str
+    score: int | None = None
+    badge_enabled: bool = True
+    image_url: str
+    project_url: str
+    markdown: str
+    hosted_image_url: str
+    hosted_project_url: str
+
+
+class PublicProjectOut(BaseModel):
+    slug: str
+    name: str
+    score: int | None = None
+    grade: str | None = None
+    framework: str
+    routes_found: int = 0
+    last_scanned_at: str | None = None
+    project_url: str
+
+
+class HostedPreviewIn(BaseModel):
+    github_url: str = Field(..., min_length=10, max_length=500)
+
+
+class HostedPreviewOut(BaseModel):
+    github_url: str
+    repo: str
+    framework: str
+    routes_found: int
+    files_scanned: int
+    score: int
+    grade: str
+    summary: str
+    breakdown: dict
+    drift: dict
+    hosted: bool = True
+    message: str
 
     model_config = {"from_attributes": True}
 

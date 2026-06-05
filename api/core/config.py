@@ -24,6 +24,8 @@ class Settings(BaseSettings):
     workspace_root: Path = Path(__file__).resolve().parents[2]
     max_scan_files: int = 500
     frontend_url: str = "http://localhost:5173"
+    public_api_url: str = "http://localhost:8080"
+    public_site_url: str = "http://localhost:8080"
 
     watch_interval_seconds: int = 3
 

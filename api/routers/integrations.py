@@ -71,6 +71,8 @@ async def update_project(
         project.github_repo = body.github_repo.strip()
     if body.slack_webhook is not None:
         project.slack_webhook = body.slack_webhook.strip()
+    if body.badge_public is not None:
+        project.badge_public = body.badge_public
     await db.commit()
     await db.refresh(project)
     return project

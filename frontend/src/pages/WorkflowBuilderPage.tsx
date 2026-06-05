@@ -65,7 +65,7 @@ export default function WorkflowBuilderPage() {
     [workflow]
   );
 
-  const [nodes, setNodes, onNodesChange] = useNodesState(initial.nodes);
+  const [nodes, , onNodesChange] = useNodesState(initial.nodes);
   const [edges, setEdges, onEdgesChange] = useEdgesState(initial.edges);
 
   const onConnect = useCallback(

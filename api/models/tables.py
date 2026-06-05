@@ -18,6 +18,8 @@ class Project(Base):
     plan: Mapped[str] = mapped_column(String(32), default="starter")
     slack_webhook: Mapped[str] = mapped_column(String(512), default="")
     last_score: Mapped[int] = mapped_column(Integer, default=0)
+    public_slug: Mapped[str] = mapped_column(String(64), default="", index=True)
+    badge_public: Mapped[bool] = mapped_column(Boolean, default=True)
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
 
     scans: Mapped[list["Scan"]] = relationship(back_populates="project")

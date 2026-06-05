@@ -68,6 +68,8 @@ export default function HomePage() {
           </span>
         </div>
         <p className={styles.quickLinks}>
+          <Link to="/try">Try a GitHub repo — no install</Link>
+          <span aria-hidden>·</span>
           <Link to="/billing">View pricing</Link>
           <span aria-hidden>·</span>
           <Link to="/api">API reference</Link>

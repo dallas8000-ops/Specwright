@@ -6,6 +6,7 @@ import TeamDashboardPage from "@/pages/TeamDashboardPage";
 import ProjectPage from "@/pages/ProjectPage";
 import BillingPage from "@/pages/BillingPage";
 import ApiPage from "@/pages/ApiPage";
+import TryHostedPage from "@/pages/TryHostedPage";
 
 export default function App() {
   return (
@@ -18,6 +19,7 @@ export default function App() {
           <Route path="/project/:id" element={<ProjectPage />} />
           <Route path="/billing" element={<BillingPage />} />
           <Route path="/api" element={<ApiPage />} />
+          <Route path="/try" element={<TryHostedPage />} />
           <Route path="*" element={<Navigate to="/" replace />} />
         </Route>
       </Routes>

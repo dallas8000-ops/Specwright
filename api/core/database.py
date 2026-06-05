@@ -19,7 +19,11 @@ async def get_db():
 async def init_db():
     from api.core.migrate import run_migrations
     from api.models import tables  # noqa: F401
+    from api.services.project_slug import backfill_project_slugs
 
     async with engine.begin() as conn:
         await conn.run_sync(Base.metadata.create_all)
         await run_migrations(conn)
+
+    async with SessionLocal() as session:
+        await backfill_project_slugs(session)

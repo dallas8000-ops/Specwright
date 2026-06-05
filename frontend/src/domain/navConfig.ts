@@ -7,9 +7,7 @@ import {
   Plug,
   Shield,
   Brain,
-  Bell,
   Scale,
-  GitBranch,
 } from "lucide-react";
 
 export type NavKey =
