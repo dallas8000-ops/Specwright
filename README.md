@@ -5,7 +5,9 @@
 </p>
 
 <p align="center">
-  <a href="https://github.com/dallas8000-ops/Specwright-">Repository</a>
+  <a href="https://github.com/dallas8000-ops/Specwright">Repository</a>
+  · <a href="https://specwright-web.onrender.com">Live demo</a>
+  · <a href="https://specwright-web.onrender.com/try">Try GitHub</a>
   · Team dashboard · Specwright Score · Watch mode · Grounded AI
 </p>
 
@@ -115,10 +117,12 @@ Paste a public **GitHub URL** and get a Specwright Score without connecting a lo
 
 This is the foundation for **`app.specwright.io`** — same scan engine, zero venv setup for evaluators. Connect the repo locally afterward for watch mode, badges, and team dashboard.
 
-Production hosted URLs (when deployed):
+**Live on Render:**
 
-- `https://app.specwright.io/try`
-- `https://specwright.app/badge/{slug}.svg`
+- App: [https://specwright-web.onrender.com](https://specwright-web.onrender.com)
+- Try GitHub: [https://specwright-web.onrender.com/try](https://specwright-web.onrender.com/try)
+- API health: [https://specwright-api.onrender.com/api/v1/health](https://specwright-api.onrender.com/api/v1/health)
+- Badge: `https://specwright-api.onrender.com/api/v1/badge/{slug}.svg`
 
 ## Framework support
 
@@ -150,6 +154,7 @@ Specwright-/
 | `/dashboard` | **Team dashboard** — all projects, scores, weekly drift, trends |
 | `/` | Connect codebase, recent projects, roadmap |
 | `/project/:id` | Specwright Score, Grounded AI, integrations, artifacts |
+| `/try` | **Hosted preview** — paste a public GitHub URL, get a score |
 | `/billing` | Starter / Pro / Enterprise pricing |
 | `/api` | In-app API hub (Swagger, ReDoc, health, product) |
 
@@ -166,7 +171,7 @@ Blueprint file: `render.yaml` — two services:
 
 **First deploy**
 
-1. [Render Dashboard](https://dashboard.render.com) → **New** → **Blueprint** → connect `dallas8000-ops/Specwright-`
+1. [Render Dashboard](https://dashboard.render.com) → **New** → **Blueprint** → connect [dallas8000-ops/Specwright](https://github.com/dallas8000-ops/Specwright)
 2. After services are created, set env vars:
 
 | Service | Variable | Value |
@@ -178,17 +183,21 @@ Blueprint file: `render.yaml` — two services:
 
 3. **Manual Deploy** on both services (or push to `main` if auto-deploy is on).
 
-**Free tier note:** persistent disks are not available on free web services. SQLite lives at `specwright.db` in the container working dir and resets on redeploy — fine for demos; upgrade the API plan + add a disk (or use PostgreSQL) for durable data.
+**Free tier notes:**
 
-**Redeploy** — push to `main` or click **Manual Deploy → Deploy latest commit** on each service.
+- Persistent disks are **not** supported on free web services — do not add a `disk:` block to `render.yaml`.
+- SQLite URL must be `sqlite+aiosqlite:///specwright.db` (relative to `/app`). Paths like `///tmp/...` fail because SQLAlchemy treats them as relative and the parent dir may not exist.
+- Data resets on redeploy — fine for demos; upgrade the API plan + disk, or use PostgreSQL, for durable storage.
+
+**Redeploy** — push to `main` or click **Manual Deploy → Deploy latest commit** on each service. After changing `VITE_API_URL`, redeploy **specwright-web** (value is baked in at build time).
 
 Health check: `GET https://specwright-api.onrender.com/api/v1/health`
 
 ## Quick start
 
 ```powershell
-git clone https://github.com/dallas8000-ops/Specwright-.git
-cd Specwright-
+git clone https://github.com/dallas8000-ops/Specwright.git
+cd Specwright
 copy .env.specwright.example .env
 
 # API venv (first time)
