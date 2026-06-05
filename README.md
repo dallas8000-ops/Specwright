@@ -178,6 +178,8 @@ Blueprint file: `render.yaml` — two services:
 
 3. **Manual Deploy** on both services (or push to `main` if auto-deploy is on).
 
+**Free tier note:** persistent disks are not available on free web services. SQLite lives at `/tmp/specwright.db` and resets on redeploy — fine for demos; upgrade the API plan + add a disk (or use PostgreSQL) for durable data.
+
 **Redeploy** — push to `main` or click **Manual Deploy → Deploy latest commit** on each service.
 
 Health check: `GET https://specwright-api.onrender.com/api/v1/health`

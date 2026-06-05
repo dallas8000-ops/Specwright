@@ -14,7 +14,7 @@ services:
       - key: SPECWRIGHT_DEBUG
         value: "false"
       - key: SPECWRIGHT_DATABASE_URL
-        value: sqlite+aiosqlite:////data/specwright.db
+        value: sqlite+aiosqlite:///tmp/specwright.db
       - key: SPECWRIGHT_FRONTEND_URL
         sync: false
       - key: SPECWRIGHT_PUBLIC_API_URL
@@ -33,10 +33,6 @@ services:
         sync: false
       - key: SPECWRIGHT_STRIPE_PRICE_ID_PRO
         sync: false
-    disk:
-      name: specwright-data
-      mountPath: /data
-      sizeGB: 1
 
   - type: web
     name: specwright-web
