@@ -1,3 +1,4 @@
+import importlib.util
 from contextlib import asynccontextmanager
 from pathlib import Path
 
@@ -8,6 +9,7 @@ from fastapi.responses import HTMLResponse
 from api.core.config import settings
 from api.core.database import init_db
 from api.routers import ai, billing, hosted, insights, integrations, projects, public
+from api.services import billing_service
 from api.services.watch_service import watch_manager
 
 
@@ -79,6 +81,22 @@ async def short_badge(slug: str):
 @app.get("/api/v1/health")
 async def health():
     return {"status": "ok", "product": settings.app_name}
+
+
+@app.get("/api/v1/health/billing")
+async def health_billing():
+    return {
+        "status": "ok" if billing_service.billing_configured() else "missing_config",
+        "billing": {
+            "stripe_secret_key": bool(settings.stripe_secret_key.strip()),
+            "stripe_webhook_secret": bool(settings.stripe_webhook_secret.strip()),
+            "stripe_price_id_starter": bool(settings.stripe_price_id_starter.strip()),
+            "stripe_price_id_pro": bool(settings.stripe_price_id_pro.strip()),
+            "stripe_sdk_installed": importlib.util.find_spec("stripe") is not None,
+        },
+        "webhook_url_path": "/api/v1/billing/webhook",
+        "required_webhook_events": ["checkout.session.completed"],
+    }
 
 
 @app.get("/api/v1/product")
