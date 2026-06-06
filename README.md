@@ -210,10 +210,25 @@ cd frontend; npm install; cd ..
 # One-shot dev (two terminal windows)
 .\scripts\dev.ps1
 
+# Quick smoke test (frontend + api + backend route checks)
+.\scripts\smoke.ps1
+
 # Or manually:
 api\.venv\Scripts\uvicorn api.main:app --reload --port 8080
 cd frontend; npm run dev
 ```
+
+## CI smoke and coverage gates
+
+GitHub Actions workflow: [.github/workflows/ci-smoke.yml](.github/workflows/ci-smoke.yml)
+
+It runs three independent checks on push/PR:
+
+1. Frontend unit smoke (`npm run test:run`)
+2. API tests with coverage gate (`--cov-fail-under=30`)
+3. Backend pytest with coverage gate (configured in [backend/pytest.ini](backend/pytest.ini) as `--cov-fail-under=60`)
+
+These thresholds are conservative by design to protect app integrity while still enforcing baseline quality in CI.
 
 1. Open http://localhost:5173  
 2. **Connect** — add one or more codebases (absolute paths)  

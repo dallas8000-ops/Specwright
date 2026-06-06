@@ -48,6 +48,7 @@ urlpatterns = [
     path("api/auth/token/", TokenObtainPairView.as_view(), name="token_obtain"),
     path("api/auth/token/refresh/", TokenRefreshView.as_view(), name="token_refresh"),
     path("api/auth/register/", RegisterView.as_view(), name="register"),
+    path("api/auth/users/", RegisterView.as_view(), name="auth-users"),
     path("api/auth/me/", MeView.as_view(), name="me"),
     path("api/screen-context/<str:screen>/", ScreenContextView.as_view(), name="screen-context"),
     path("api/services/", service_registry, name="service-registry"),
@@ -55,6 +56,11 @@ urlpatterns = [
     path("api/ai/intake/", nl_intake, name="ai-intake"),
     path("api/webhooks/<slug:workflow_slug>/", trigger_webhook, name="webhook-trigger"),
     path("api/integrations/slack/interaction/", slack_interaction, name="slack-interaction"),
+    path(
+        "api/reports/schedules/",
+        AccessReviewScheduleViewSet.as_view({"get": "list"}),
+        name="reports-schedules",
+    ),
     path("api/", include(router.urls)),
 ]
 
