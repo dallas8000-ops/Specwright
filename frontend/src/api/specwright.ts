@@ -1,12 +1,8 @@
 import axios from "axios";
 
-const configuredApiUrl = import.meta.env.VITE_API_URL?.replace(/\/$/, "");
+import { resolveSpecwrightApiBase } from "./resolveApiBase";
 
-const apiBase = configuredApiUrl
-  ? configuredApiUrl.endsWith("/api/v1")
-    ? configuredApiUrl
-    : `${configuredApiUrl}/api/v1`
-  : "https://specwright-api-production.up.railway.app/api/v1";
+const apiBase = resolveSpecwrightApiBase();
 
 export const specwright = axios.create({
   baseURL: apiBase,
