@@ -108,9 +108,12 @@ async def handle_stripe_webhook(payload: bytes, sig_header: str | None) -> dict:
     import stripe
 
     stripe.api_key = settings.stripe_secret_key
-    event = stripe.Webhook.construct_event(
-        payload, sig_header, settings.stripe_webhook_secret
-    )
+    try:
+        event = stripe.Webhook.construct_event(
+            payload, sig_header, settings.stripe_webhook_secret
+        )
+    except stripe.SignatureVerificationError as e:
+        raise ValueError("Invalid signature") from e
     if event["type"] == "checkout.session.completed":
         session = event["data"]["object"]
         tier = (session.get("metadata") or {}).get("tier", "pro")
