@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 from api.core.config import settings
+from api.services.stripe_resilience import call_stripe
 
 FEATURE_MATRIX = [
     {"name": "Unlimited codebase scans", "starter": True, "pro": True, "enterprise": True},
@@ -84,6 +85,7 @@ async def create_checkout_session(
         raise ValueError("Stripe price ID is not configured for this tier.")
 
     stripe.api_key = settings.stripe_secret_key
+    stripe.api_version = settings.stripe_api_version
     session_kwargs: dict = {
         "mode": "subscription",
         "line_items": [{"price": price_id, "quantity": 1}],
@@ -97,7 +99,12 @@ async def create_checkout_session(
         session_kwargs["subscription_data"] = {
             "trial_period_days": settings.pro_trial_days,
         }
-    session = stripe.checkout.Session.create(**session_kwargs)
+    session = await call_stripe(
+        "checkout.session.create",
+        stripe.checkout.Session.create,
+        max_attempts=settings.stripe_retry_attempts,
+        **session_kwargs,
+    )
     return {"mode": "stripe", "url": session.url, "session_id": session.id, "tier": tier}
 
 
@@ -108,6 +115,7 @@ async def handle_stripe_webhook(payload: bytes, sig_header: str | None) -> dict:
     import stripe
 
     stripe.api_key = settings.stripe_secret_key
+    stripe.api_version = settings.stripe_api_version
     try:
         event = stripe.Webhook.construct_event(
             payload, sig_header, settings.stripe_webhook_secret

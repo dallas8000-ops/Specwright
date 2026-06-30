@@ -1,11 +1,18 @@
 from pathlib import Path
 
+from pydantic import model_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
+
+_REPO_ROOT = Path(__file__).resolve().parents[2]
 
 
 class Settings(BaseSettings):
     model_config = SettingsConfigDict(
-        env_file=".env",
+        # Example first, then .env — later files win. Absolute paths so cwd does not matter.
+        env_file=(
+            str(_REPO_ROOT / ".env.specwright.example"),
+            str(_REPO_ROOT / ".env"),
+        ),
         env_prefix="SPECWRIGHT_",
         extra="ignore",
     )
@@ -40,6 +47,13 @@ class Settings(BaseSettings):
     ai_api_base_url: str = "https://api.openai.com/v1"
     ai_model: str = "gpt-4o-mini"
     ai_auto_on_scan: bool = True
+    ai_auto_tests_on_scan: bool = True
+    auto_scan_on_create: bool = True
+    auto_watch_on_create: bool = True
+    auto_ci_sync_on_scan: bool = True
+    auto_notion_on_scan: bool = False
+    autopilot_mode: bool = True
+    local_repo_search_roots: str = ""
 
     # Pricing (public catalog defaults)
     starter_price_usd: int = 29
@@ -52,7 +66,16 @@ class Settings(BaseSettings):
     stripe_webhook_secret: str = ""
     stripe_price_id_starter: str = ""
     stripe_price_id_pro: str = ""
+    stripe_api_version: str = "2026-05-27.dahlia"
+    stripe_retry_attempts: int = 3
     billing_mock_mode: bool = False
+
+    @model_validator(mode="after")
+    def apply_dev_defaults(self) -> "Settings":
+        # Local dev without Stripe: enable mock checkout and Pro features
+        if self.debug and not self.stripe_secret_key:
+            object.__setattr__(self, "billing_mock_mode", True)
+        return self
 
 
 settings = Settings()
