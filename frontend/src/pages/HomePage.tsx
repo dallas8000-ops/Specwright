@@ -22,10 +22,6 @@ export default function HomePage() {
     typeof window !== "undefined"
       ? "c:\\Software Projects"
       : "";
-  const defaultPath =
-    typeof window !== "undefined"
-      ? "c:\\Software Projects\\Specwright\\api"
-      : "";
 
   function handleConnect() {
     setPathError("");
