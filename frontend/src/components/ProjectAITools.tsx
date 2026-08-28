@@ -1,5 +1,5 @@
-import { useState } from "react";
-import { useMutation, useQuery } from "@tanstack/react-query";
+import { useEffect, useRef, useState } from "react";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import {
   AlertTriangle,
   BookOpen,
@@ -9,12 +9,18 @@ import {
   Sparkles,
   TestTube2,
 } from "lucide-react";
-import { specwright, Features, Project } from "@/api/specwright";
+import {
+  activateMockPro,
+  specwright,
+  Features,
+  Project,
+} from "@/api/specwright";
 import styles from "./ProjectIntegrations.module.css";
 
 type Props = {
   projectId: number;
   project: Project | undefined;
+  hasScan: boolean;
   onArtifactsUpdated: () => void;
   onTestsUpdated?: (content: string) => void;
 };
@@ -22,9 +28,12 @@ type Props = {
 export default function ProjectAITools({
   projectId,
   project,
+  hasScan,
   onArtifactsUpdated,
   onTestsUpdated,
 }: Props) {
+  const qc = useQueryClient();
+  const proUpgradeStarted = useRef(false);
   const [question, setQuestion] = useState("");
   const [chatAnswer, setChatAnswer] = useState("");
   const [migrationNote, setMigrationNote] = useState("");
@@ -34,14 +43,34 @@ export default function ProjectAITools({
     queryFn: async () => (await specwright.get<Features>("/features")).data,
   });
 
-  const { data: suite } = useQuery({
+  const { data: suite, isError: suiteError } = useQuery({
     queryKey: ["ai-suite", projectId],
     queryFn: async () => (await specwright.get(`/projects/${projectId}/ai/suite`)).data,
+    enabled: hasScan,
   });
 
-  const canAi =
-    features?.ai_suite &&
-    (project?.plan === "pro" || project?.plan === "enterprise");
+  const upgradePro = useMutation({
+    mutationFn: () => activateMockPro(projectId),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["project", projectId] });
+      qc.invalidateQueries({ queryKey: ["billing"] });
+    },
+  });
+
+  useEffect(() => {
+    if (
+      features?.billing_mock &&
+      project?.plan === "starter" &&
+      !proUpgradeStarted.current &&
+      !upgradePro.isPending
+    ) {
+      proUpgradeStarted.current = true;
+      upgradePro.mutate();
+    }
+  }, [features?.billing_mock, project?.plan, upgradePro]);
+
+  const isPro = project?.plan === "pro" || project?.plan === "enterprise";
+  const canAi = Boolean(features?.ai_suite && isPro);
 
   const descriptions = useMutation({
     mutationFn: async () =>
@@ -79,14 +108,21 @@ export default function ProjectAITools({
     onSuccess: (data) => setChatAnswer(data.answer),
   });
 
+  if (!hasScan || suiteError) {
+    return null;
+  }
+
+  const breakingItems = suite?.breaking_change?.items ?? [];
+  const hasBreaking = breakingItems.length > 0;
+
   return (
     <section className={styles.panel}>
       <h3>
         <Sparkles size={18} /> Grounded AI
       </h3>
       <p className={styles.suiteIntro}>
-        AST owns truth; AI owns prose. Only routes from your last scan are used — no invented
-        endpoints.
+        AST owns truth; AI owns prose. Scan insights below are always live; LLM actions
+        use routes from your last scan only.
       </p>
 
       {suite && (
@@ -97,113 +133,112 @@ export default function ProjectAITools({
         </div>
       )}
 
-      <div className={styles.grid}>
-        <div className={styles.card}>
-          <div className={styles.cardHead}>
-            <BookOpen size={16} />
-            <strong>Fill descriptions</strong>
+      {canAi ? (
+        <div className={styles.grid}>
+          <div className={styles.card}>
+            <div className={styles.cardHead}>
+              <BookOpen size={16} />
+              <strong>Fill descriptions</strong>
+            </div>
+            <p>Improve weak OpenAPI summaries from handler docstrings.</p>
+            <button
+              type="button"
+              disabled={descriptions.isPending}
+              onClick={() => descriptions.mutate()}
+            >
+              {descriptions.isPending ? <Loader2 size={14} className={styles.spin} /> : null}
+              Fill gaps
+            </button>
+            {descriptions.isSuccess && (
+              <span className={styles.status}>
+                Updated {descriptions.data.filled} operation(s)
+              </span>
+            )}
           </div>
-          <p>Improve weak OpenAPI summaries from handler docstrings.</p>
-          <button
-            type="button"
-            disabled={!canAi || descriptions.isPending}
-            onClick={() => descriptions.mutate()}
-          >
-            {descriptions.isPending ? <Loader2 size={14} className={styles.spin} /> : null}
-            Fill gaps
-          </button>
-          {descriptions.isSuccess && (
-            <span className={styles.status}>
-              Updated {descriptions.data.filled} operation(s)
-            </span>
-          )}
-        </div>
 
-        <div className={styles.card}>
-          <div className={styles.cardHead}>
-            <TestTube2 size={16} />
-            <strong>Test bodies</strong>
+          <div className={styles.card}>
+            <div className={styles.cardHead}>
+              <TestTube2 size={16} />
+              <strong>Test bodies</strong>
+            </div>
+            <p>Replace smoke stubs with grounded pytest bodies.</p>
+            <button
+              type="button"
+              disabled={tests.isPending}
+              onClick={() => tests.mutate()}
+            >
+              {tests.isPending ? <Loader2 size={14} className={styles.spin} /> : null}
+              Enhance tests
+            </button>
+            {tests.isSuccess && (
+              <span className={styles.status}>
+                Enhanced {tests.data.enhanced} test(s)
+              </span>
+            )}
           </div>
-          <p>Replace smoke stubs with grounded pytest bodies.</p>
-          <button
-            type="button"
-            disabled={!canAi || tests.isPending}
-            onClick={() => tests.mutate()}
-          >
-            {tests.isPending ? <Loader2 size={14} className={styles.spin} /> : null}
-            Enhance tests
-          </button>
-          {tests.isSuccess && (
-            <span className={styles.status}>
-              Enhanced {tests.data.enhanced} test(s)
-            </span>
-          )}
-        </div>
 
-        <div className={styles.card}>
-          <div className={styles.cardHead}>
-            <GitPullRequest size={16} />
-            <strong>Migration note</strong>
+          <div className={styles.card}>
+            <div className={styles.cardHead}>
+              <GitPullRequest size={16} />
+              <strong>Migration note</strong>
+            </div>
+            <p>Client-facing paragraph from PR diff + score (also on GitHub comments).</p>
+            <button
+              type="button"
+              disabled={migration.isPending}
+              onClick={() => migration.mutate()}
+            >
+              {migration.isPending ? <Loader2 size={14} className={styles.spin} /> : null}
+              Generate note
+            </button>
+            {migrationNote && <pre className={styles.notePreview}>{migrationNote}</pre>}
           </div>
-          <p>Client-facing paragraph from PR diff + score (also on GitHub comments).</p>
-          <button
-            type="button"
-            disabled={!canAi || migration.isPending}
-            onClick={() => migration.mutate()}
-          >
-            {migration.isPending ? <Loader2 size={14} className={styles.spin} /> : null}
-            Generate note
-          </button>
-          {migrationNote && <pre className={styles.notePreview}>{migrationNote}</pre>}
-        </div>
 
-        <div className={styles.card}>
-          <div className={styles.cardHead}>
-            <AlertTriangle size={16} />
-            <strong>Breaking changes</strong>
+          <div className={`${styles.card} ${styles.cardWide}`}>
+            <div className={styles.cardHead}>
+              <MessageCircle size={16} />
+              <strong>How do I…?</strong>
+            </div>
+            <input
+              placeholder="e.g. How do I list projects?"
+              value={question}
+              onChange={(e) => setQuestion(e.target.value)}
+            />
+            <button
+              type="button"
+              disabled={!question.trim() || chat.isPending}
+              onClick={() => chat.mutate()}
+            >
+              {chat.isPending ? <Loader2 size={14} className={styles.spin} /> : null}
+              Ask (scoped to scan)
+            </button>
+            {chatAnswer && <pre className={styles.notePreview}>{chatAnswer}</pre>}
           </div>
-          <p>Rule-based triage of added vs removed paths (free with any scan).</p>
-          {suite?.breaking_change?.items?.length ? (
-            <ul className={styles.triageList}>
-              {suite.breaking_change.items.slice(0, 5).map((item: { change: string; path: string; classification: string }) => (
-                <li key={`${item.change}-${item.path}`}>
-                  <span data-class={item.classification}>{item.classification}</span>{" "}
-                  <code>{item.path}</code>
-                </li>
-              ))}
-            </ul>
-          ) : (
-            <span className={styles.hint}>No path changes in latest scan</span>
-          )}
         </div>
-
-        <div className={`${styles.card} ${styles.cardWide}`}>
-          <div className={styles.cardHead}>
-            <MessageCircle size={16} />
-            <strong>How do I…?</strong>
-          </div>
-          <input
-            placeholder="e.g. How do I list projects?"
-            value={question}
-            onChange={(e) => setQuestion(e.target.value)}
-          />
-          <button
-            type="button"
-            disabled={!canAi || !question.trim() || chat.isPending}
-            onClick={() => chat.mutate()}
-          >
-            {chat.isPending ? <Loader2 size={14} className={styles.spin} /> : null}
-            Ask (scoped to scan)
-          </button>
-          {chatAnswer && <pre className={styles.notePreview}>{chatAnswer}</pre>}
-        </div>
-      </div>
-
-      {!features?.ai_suite && (
-        <span className={styles.hint}>Set SPECWRIGHT_AI_API_KEY on the API server</span>
+      ) : (
+        <p className={styles.capabilityNote}>
+          {!features?.ai_suite
+            ? "LLM actions: add SPECWRIGHT_AI_API_KEY to .env and restart the API."
+            : !isPro
+              ? "LLM actions: Pro plan required (use Billing or dev mock checkout)."
+              : "LLM actions: waiting for API configuration."}
+        </p>
       )}
-      {features?.ai_suite && project?.plan === "starter" && (
-        <span className={styles.hint}>Upgrade to Pro for LLM-powered AI actions</span>
+
+      {hasBreaking && (
+        <div className={styles.breakingSection}>
+          <h4>
+            <AlertTriangle size={16} /> Route changes detected
+          </h4>
+          <ul className={styles.triageList}>
+            {breakingItems.slice(0, 8).map((item: { change: string; path: string; classification: string }) => (
+              <li key={`${item.change}-${item.path}`}>
+                <span data-class={item.classification}>{item.classification}</span>{" "}
+                <code>{item.path}</code>
+              </li>
+            ))}
+          </ul>
+        </div>
       )}
     </section>
   );

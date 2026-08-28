@@ -5,8 +5,9 @@ import json
 import re
 from pathlib import Path
 
-from api.analyzers.discovery import collect_python_files
-from api.analyzers.fastapi_scanner import collect_routes
+from api.analyzers.discovery import collect_python_files, detect_framework
+from api.analyzers.route_collector import collect_all_routes
+from api.analyzers.route_collector import collect_all_routes
 
 
 def _route_key(route: dict) -> str:
@@ -17,14 +18,18 @@ def _tests_for_routes(test_content: str, routes: list[dict]) -> dict[str, bool]:
     covered: dict[str, bool] = {}
     for r in routes:
         key = _route_key(r)
-        name = r.get("name", "")
         path = r.get("path", "")
-        patterns = [
-            f"test_{name}",
-            f"def test_{name}",
-            path.replace("{", "").replace("}", ""),
-        ]
-        covered[key] = any(p and p in test_content for p in patterns if p != "/")
+        name = r.get("name", "")
+        # Match quoted paths in generated tests (avoids /health matching /health/scheduler).
+        quoted = (
+            f"'{path}'",
+            f'"{path}"',
+            f"'{path.replace('{', '').replace('}', '')}'",
+        )
+        fname = f"test_{name}_{r.get('method', 'get').lower()}"
+        covered[key] = any(q in test_content for q in quoted if q not in ("''", '""')) or (
+            name and fname in test_content
+        )
     return covered
 
 
@@ -70,6 +75,13 @@ def compute_coverage_map(
             }
         )
     return rows
+
+
+def uncovered_routes(routes: list[dict], test_content: str) -> list[dict]:
+    """Routes with no pytest scaffold detected in test_content."""
+    rows = compute_coverage_map(routes, test_content, "", "")
+    missing = {(r["method"], r["path"]) for r in rows if not r["has_test"]}
+    return [r for r in routes if (r.get("method"), r.get("path")) in missing]
 
 
 def enrich_coverage_labels(
@@ -276,8 +288,26 @@ def build_metrics(
 
 
 def build_alerts(
-    coverage: list[dict], pr_diff: dict | None, *, ai: dict | None = None
+    coverage: list[dict],
+    pr_diff: dict | None,
+    *,
+    ai: dict | None = None,
+    route_count: int | None = None,
+    framework: str | None = None,
 ) -> dict:
+    total_routes = route_count if route_count is not None else len(coverage)
+    zero_routes_banner = None
+    if total_routes == 0:
+        hint = (
+            "Django API routes live in urls.py — rescan after updating Specwright, "
+            "or point the project at apps/backend."
+            if framework == "django"
+            else "No HTTP routes found — check repo path or framework."
+        )
+        zero_routes_banner = {
+            "message": f"0 API routes detected. {hint}",
+        }
+
     no_test = [r for r in coverage if not r["has_test"]]
     test_samples = [
         f"{r['method']} {r['path']}" for r in no_test[:3]
@@ -332,6 +362,7 @@ def build_alerts(
         "test_gap": test_banner,
         "pr_update": pr_banner,
         "description_gap": description_banner,
+        "zero_routes": zero_routes_banner,
     }
 
 
@@ -339,7 +370,8 @@ def build_project_health(
     root: Path, artifacts: list, previous_openapi: str | None = None
 ) -> dict:
     files = collect_python_files(root)
-    routes = collect_routes(files, root)
+    framework = detect_framework(root)
+    routes = collect_all_routes(files, root, framework)
 
     by_kind = {a.kind: a.content for a in artifacts}
     openapi = by_kind.get("openapi", "")
@@ -366,7 +398,12 @@ def build_project_health(
         models_md=models_md,
     )
     metrics = build_metrics(coverage, models_count, models_md, drift, pr_diff)
-    alerts = build_alerts(coverage, pr_diff)
+    alerts = build_alerts(
+        coverage,
+        pr_diff,
+        route_count=len(routes),
+        framework=framework,
+    )
 
     return {
         "score": score_data,

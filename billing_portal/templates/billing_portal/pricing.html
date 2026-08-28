@@ -1,0 +1,112 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Pricing</title>
+  <style>
+    body { font-family: system-ui, sans-serif; max-width: 960px; margin: 0 auto; padding: 2rem; }
+    .grid { display: grid; gap: 1.5rem; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); margin-top: 2rem; }
+    .tier-card { border: 1px solid #e5e7eb; border-radius: 12px; padding: 1.5rem; }
+    .price { font-size: 1.75rem; font-weight: bold; }
+    .trial { color: #059669; font-size: 0.875rem; }
+    button { margin-top: 1rem; padding: 0.5rem 1rem; background: #111; color: #fff; border: none; border-radius: 8px; cursor: pointer; }
+  </style>
+</head>
+<body>
+  <h1>Choose your plan</h1>
+  <p>Simple, transparent pricing — server-rendered for SEO.</p>
+  <div class="grid">
+    <article class="tier-card">
+      <h2>No one knows test/doc coverage</h2>
+      <p class="price">$0.00/month</p>
+      <form method="post" action="{% url 'stripe-checkout' %}">
+{% csrf_token %}        <input type="hidden" name="priceId" value="price_1ThGVPRxznXvj6jhV69geQ0S" />
+        <button type="submit">Subscribe</button>
+      </form>
+    </article>
+    <article class="tier-card">
+      <h2>**Team dashboard**</h2>
+      <p class="price">$7.00/month</p>
+      <form method="post" action="{% url 'stripe-checkout' %}">
+{% csrf_token %}        <input type="hidden" name="priceId" value="price_1ThGVQRxznXvj6jhaR9a6Adl" />
+        <button type="submit">Subscribe</button>
+      </form>
+    </article>
+    <article class="tier-card">
+      <h2>**Watch + live sync**</h2>
+      <p class="price">$3.00/month</p>
+      <form method="post" action="{% url 'stripe-checkout' %}">
+{% csrf_token %}        <input type="hidden" name="priceId" value="price_1ThGVQRxznXvj6jhwv6NHmtI" />
+        <button type="submit">Subscribe</button>
+      </form>
+    </article>
+    <article class="tier-card">
+      <h2>**Drifted this week**</h2>
+      <p class="price">$7.00/month</p>
+      <form method="post" action="{% url 'stripe-checkout' %}">
+{% csrf_token %}        <input type="hidden" name="priceId" value="price_1ThGVRRxznXvj6jhwm6PsaEm" />
+        <button type="submit">Subscribe</button>
+      </form>
+    </article>
+    <article class="tier-card">
+      <h2>**All projects**</h2>
+      <p class="price">$7.00/month</p>
+      <form method="post" action="{% url 'stripe-checkout' %}">
+{% csrf_token %}        <input type="hidden" name="priceId" value="price_1ThGVSRxznXvj6jhZp0y2DVs" />
+        <button type="submit">Subscribe</button>
+      </form>
+    </article>
+    <article class="tier-card">
+      <h2>**Team score trend**</h2>
+      <p class="price">$8.00/month</p>
+      <form method="post" action="{% url 'stripe-checkout' %}">
+{% csrf_token %}        <input type="hidden" name="priceId" value="price_1ThGVSRxznXvj6jhExAlFxW1" />
+        <button type="submit">Subscribe</button>
+      </form>
+    </article>
+    <article class="tier-card">
+      <h2>`GET /badge/{slug}.svg`</h2>
+      <p class="price">$302.00/month</p>
+      <form method="post" action="{% url 'stripe-checkout' %}">
+{% csrf_token %}        <input type="hidden" name="priceId" value="price_1ThGVTRxznXvj6jhPUpe5XFJ" />
+        <button type="submit">Subscribe</button>
+      </form>
+    </article>
+    <article class="tier-card">
+      <h2>API</h2>
+      <p class="price">$1.00/month</p>
+      <form method="post" action="{% url 'stripe-checkout' %}">
+{% csrf_token %}        <input type="hidden" name="priceId" value="price_1ThGVURxznXvj6jhdxHhf2tF" />
+        <button type="submit">Subscribe</button>
+      </form>
+    </article>
+    <article class="tier-card">
+      <h2>Server</h2>
+      <p class="price">$120.00/month</p>
+      <form method="post" action="{% url 'stripe-checkout' %}">
+{% csrf_token %}        <input type="hidden" name="priceId" value="price_1ThGVURxznXvj6jhw95sgVeI" />
+        <button type="submit">Subscribe</button>
+      </form>
+    </article>
+    <article class="tier-card">
+      <h2>Starter</h2>
+      <p class="price">$29.00/month</p>
+      <ul><li>Scans</li><li>watch</li><li>exports</li><li>CI artifacts</li><li>team dashboard</li></ul>
+      <form method="post" action="{% url 'stripe-checkout' %}">
+{% csrf_token %}        <input type="hidden" name="priceId" value="price_1ThGVVRxznXvj6jhkTEN7JyG" />
+        <button type="submit">Subscribe</button>
+      </form>
+    </article>
+    <article class="tier-card">
+      <h2>Pro</h2>
+      <p class="price">$79.00/month</p>
+      <ul><li>Grounded AI</li><li>auto description fill &amp; migration notes</li><li>GitHub PR automation</li></ul>
+      <form method="post" action="{% url 'stripe-checkout' %}">
+{% csrf_token %}        <input type="hidden" name="priceId" value="price_1ThGVVRxznXvj6jhfB7TBkpu" />
+        <button type="submit">Subscribe</button>
+      </form>
+    </article>
+  </div>
+</body>
+</html>

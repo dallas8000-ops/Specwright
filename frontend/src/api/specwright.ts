@@ -7,6 +7,7 @@ const apiBase = resolveSpecwrightApiBase();
 export const specwright = axios.create({
   baseURL: apiBase,
   headers: { "Content-Type": "application/json" },
+  timeout: 180_000,
 });
 
 export interface Project {
@@ -18,6 +19,22 @@ export interface Project {
   github_repo: string;
   plan: string;
   created_at: string;
+  public_slug?: string;
+  last_score?: number;
+}
+
+export interface ProjectCreateResponse extends Project {
+  initial_scan?: {
+    id: number;
+    project_id: number;
+    status: string;
+    summary: string;
+    trigger: string;
+    created_at: string;
+    artifact_count: number;
+  } | null;
+  connected_via?: "local" | "clone";
+  connected_message?: string;
 }
 
 export interface Features {
@@ -26,6 +43,9 @@ export interface Features {
   ai_suite: boolean;
   watch: boolean;
   stripe: boolean;
+  billing_mock?: boolean;
+  dev_mode?: boolean;
+  notion?: boolean;
 }
 
 export interface FeatureRow {
@@ -147,11 +167,15 @@ export interface HealthAlerts {
     filled?: number;
     message: string;
   } | null;
+  zero_routes?: {
+    message: string;
+  } | null;
 }
 
 export interface ScanAiInsights {
   description_gaps: number;
   descriptions_filled: number;
+  tests_enhanced?: number;
   migration_note?: string | null;
   auto_ran: boolean;
 }
@@ -195,6 +219,14 @@ export interface ProjectHealth {
   alerts?: HealthAlerts | null;
   ai?: ScanAiInsights | null;
   last_scanned_at?: string | null;
+  autopilot?: {
+    enabled: boolean;
+    tests_gaps_before: number;
+    tests_gaps_after: number;
+    tests_ai_enhanced: number;
+    checks: Array<{ id: string; label: string; status: string; detail?: string }>;
+    all_pass: boolean;
+  } | null;
 }
 
 export async function fetchCiTemplate(projectId: number) {
@@ -272,4 +304,28 @@ export interface BadgeEmbed {
 
 export async function fetchBadgeEmbed(projectId: number): Promise<BadgeEmbed> {
   return (await specwright.get<BadgeEmbed>(`/projects/${projectId}/badge-embed`)).data;
+}
+
+export async function createProjectFromGitHub(body: {
+  github_url: string;
+  name?: string;
+  local_path?: string;
+  prefer_local?: boolean;
+  auto_watch?: boolean;
+  auto_scan?: boolean;
+}) {
+  return specwright.post<ProjectCreateResponse>("/projects/from-github", body);
+}
+
+export interface TestGapFix {
+  scaffolded_routes: number;
+  gaps_before: number;
+  gaps_after: number;
+  ai_enhanced: number;
+  score: number;
+  synced_files: string[];
+}
+
+export async function fixTestGaps(projectId: number) {
+  return specwright.post<TestGapFix>(`/projects/${projectId}/fix-tests`);
 }

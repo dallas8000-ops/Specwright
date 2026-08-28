@@ -142,11 +142,11 @@ async def ai_enhance_tests(project_id: int, db: AsyncSession = Depends(get_db)):
     except LookupError as e:
         raise HTTPException(404, str(e)) from e
 
-    from api.services.scan_runner import _django_model_names
+    from api.analyzers.django_models import collect_django_model_names
 
     root = Path(project.root_path).resolve()
     files = collect_python_files(root)
-    models = _django_model_names(files, root)
+    models = collect_django_model_names(files, root)
     framework = stats.get("framework", project.framework)
 
     result = await enhance_test_scaffold(

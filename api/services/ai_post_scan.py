@@ -5,6 +5,7 @@ from pathlib import Path
 
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from api.analyzers.discovery import collect_python_files
 from api.analyzers.fastapi_scanner import _markdown_api
 from api.core.config import settings
 from api.models.tables import Artifact
@@ -12,9 +13,11 @@ from api.services.ai_client import ai_configured
 from api.services.ai_descriptions import fill_openapi_descriptions, find_description_gaps
 from api.services.ai_docstring_reconcile import _openapi_summaries
 from api.services.ai_migration_note import generate_migration_note
+from api.services.ai_test_bodies import enhance_test_scaffold
 from api.services.artifact_sync import sync_artifacts_to_disk
 from api.services.health_score import build_project_health
 from api.services.scan_history import previous_openapi_score
+from api.analyzers.django_models import collect_django_model_names
 
 
 def _apply_summaries_to_routes(routes: list[dict], openapi: str) -> None:
@@ -33,6 +36,21 @@ def _can_auto_ai(plan: str) -> bool:
     )
 
 
+def _refresh_health_and_sync(
+    project,
+    artifacts: list[Artifact],
+    stats: dict,
+    root: Path,
+    previous_openapi: str | None,
+) -> None:
+    health = build_project_health(root, artifacts, previous_openapi)
+    stats["score"] = health["score"]
+    stats["coverage"] = health["coverage"]
+    stats["metrics"] = health.get("metrics")
+    if project.watch_enabled or stats.get("synced_files") is not None:
+        stats["synced_files"] = sync_artifacts_to_disk(root, artifacts)
+
+
 async def run_post_scan_ai(
     project,
     routes: list[dict],
@@ -42,15 +60,17 @@ async def run_post_scan_ai(
     *,
     previous_openapi: str | None,
 ) -> dict:
-    """Fill description gaps and generate PR migration notes when eligible."""
+    """Fill descriptions, enhance tests, and generate PR migration notes when eligible."""
     openapi_art = next((a for a in artifacts if a.kind == "openapi"), None)
     api_md_art = next((a for a in artifacts if a.kind == "api_docs"), None)
+    tests_art = next((a for a in artifacts if a.kind == "tests"), None)
     openapi = openapi_art.content if openapi_art else ""
 
     gaps = find_description_gaps(routes, openapi)
     ai_block: dict = {
         "description_gaps": len(gaps),
         "descriptions_filled": 0,
+        "tests_enhanced": 0,
         "migration_note": None,
         "auto_ran": False,
     }
@@ -60,6 +80,7 @@ async def run_post_scan_ai(
 
     ai_block["auto_ran"] = True
     root = Path(project.root_path).resolve()
+    artifacts_changed = False
 
     if gaps and openapi_art:
         try:
@@ -71,8 +92,36 @@ async def run_post_scan_ai(
                     api_md_art.content = _markdown_api(routes)
                 ai_block["descriptions_filled"] = result["filled"]
                 openapi = result["openapi"]
+                artifacts_changed = True
         except Exception as exc:
             ai_block["description_error"] = str(exc)[:200]
+
+    if settings.ai_auto_tests_on_scan and tests_art:
+        try:
+            files = collect_python_files(root)
+            models = collect_django_model_names(files, root)
+            framework = stats.get("framework", project.framework)
+            from api.services.health_score import compute_coverage_map
+
+            rows = compute_coverage_map(routes, tests_art.content, "", "")
+            missing_keys = {(r["method"], r["path"]) for r in rows if not r["has_test"]}
+            missing_routes = [
+                r for r in routes if (r.get("method"), r.get("path")) in missing_keys
+            ]
+            test_result = await enhance_test_scaffold(
+                framework=framework,
+                routes=missing_routes or routes,
+                models=models,
+                project_name=project.name,
+                root=root,
+                base_content=tests_art.content,
+            )
+            if test_result["enhanced"] > 0 or missing_routes:
+                tests_art.content = test_result["content"]
+                ai_block["tests_enhanced"] = test_result["enhanced"]
+                artifacts_changed = True
+        except Exception as exc:
+            ai_block["tests_error"] = str(exc)[:200]
 
     pr_diff = stats.get("pr_diff")
     if pr_diff and pr_diff.get("routes_changed", 0) > 0:
@@ -88,13 +137,7 @@ async def run_post_scan_ai(
         except Exception as exc:
             ai_block["migration_error"] = str(exc)[:200]
 
-    if ai_block["descriptions_filled"] > 0:
-        health = build_project_health(root, artifacts, previous_openapi)
-        stats["score"] = health["score"]
-        stats["coverage"] = health["coverage"]
-        stats["metrics"] = health.get("metrics")
-        if project.watch_enabled or stats.get("synced_files") is not None:
-            synced = sync_artifacts_to_disk(root, artifacts)
-            stats["synced_files"] = synced
+    if artifacts_changed:
+        _refresh_health_and_sync(project, artifacts, stats, root, previous_openapi)
 
     return {"ai": ai_block}

@@ -87,6 +87,7 @@ async def project_health(project_id: int, db: AsyncSession = Depends(get_db)):
             ai=stats.get("ai"),
             synced_files=stats.get("synced_files", []),
             last_scanned_at=scanned_at,
+            autopilot=stats.get("autopilot"),
         )
 
     from pathlib import Path

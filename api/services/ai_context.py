@@ -8,8 +8,8 @@ from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 
-from api.analyzers.discovery import collect_python_files
-from api.analyzers.fastapi_scanner import collect_routes
+from api.analyzers.discovery import collect_python_files, detect_framework
+from api.analyzers.route_collector import collect_all_routes
 from api.models.tables import Project, Scan
 
 
@@ -36,6 +36,7 @@ async def load_project_scan_context(
 
     root = Path(project.root_path).resolve()
     files = collect_python_files(root)
-    routes = collect_routes(files, root)
+    framework = project.framework if project.framework != "auto" else detect_framework(root)
+    routes = collect_all_routes(files, root, framework)
 
     return project, scan, stats, routes, by_kind

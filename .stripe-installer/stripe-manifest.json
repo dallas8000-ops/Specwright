@@ -1,0 +1,66 @@
+{
+  "createdAt": "2026-06-22T03:04:01.813679+00:00",
+  "updatedAt": "2026-07-06T05:52:41.768592+00:00",
+  "accountId": null,
+  "products": [
+    {
+      "id": "prod_UgdnrglonWJRHJ",
+      "name": "Starter"
+    },
+    {
+      "id": "prod_UgdnxRJpOWdgQf",
+      "name": "Pro"
+    },
+    {
+      "id": "prod_UggtJaJtr8qLqv",
+      "name": "Enterprise"
+    }
+  ],
+  "prices": [
+    {
+      "id": "price_1ThJVmRxznXvj6jhqPmFSLNM",
+      "tier": "Starter",
+      "amount": 900,
+      "currency": "usd",
+      "interval": "month",
+      "trialDays": 14,
+      "features": [
+        "Core features",
+        "Email support"
+      ]
+    },
+    {
+      "id": "price_1ThJVmRxznXvj6jh2aTzRO4V",
+      "tier": "Pro",
+      "amount": 2900,
+      "currency": "usd",
+      "interval": "month",
+      "trialDays": 14,
+      "features": [
+        "Everything in Starter",
+        "Priority support",
+        "Team seats"
+      ]
+    },
+    {
+      "id": "price_1ThJVnRxznXvj6jhy8uXBJ0z",
+      "tier": "Enterprise",
+      "amount": 99000,
+      "currency": "usd",
+      "interval": "year",
+      "trialDays": 0,
+      "features": [
+        "Custom SLA",
+        "Dedicated support",
+        "SSO"
+      ]
+    }
+  ],
+  "webhookEndpoint": {
+    "id": "we_1Tq5SPRxznXvj6jhgqWtsFFw",
+    "url": "https://specwright-api-production.up.railway.app/api/v1/billing/webhook",
+    "reused": false
+  },
+  "billingPortalConfig": null,
+  "appUrl": "https://specwright-api-production.up.railway.app"
+}

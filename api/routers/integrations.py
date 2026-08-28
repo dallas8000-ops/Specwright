@@ -27,8 +27,8 @@ from api.services.github_service import (
 from api.services.ai_pr_comment import enrich_pr_comment_context
 from api.services.llm_polish import polish_markdown
 from api.services.scan_runner import run_scan
-from api.analyzers.discovery import collect_python_files
-from api.analyzers.fastapi_scanner import collect_routes
+from api.analyzers.discovery import collect_python_files, detect_framework
+from api.analyzers.route_collector import collect_all_routes
 from pathlib import Path
 from api.services.watch_service import watch_manager
 
@@ -45,7 +45,54 @@ async def feature_flags():
         ai_suite=bool(settings.ai_api_key),
         watch=True,
         stripe=billing_service.billing_configured(),
+        billing_mock=settings.billing_mock_mode,
+        dev_mode=settings.debug,
+        notion=bool(settings.notion_api_key and settings.notion_parent_page_id),
     )
+
+
+@router.get("/setup")
+async def setup_status():
+    """What works out of the box vs what needs API env vars."""
+    return {
+        "working": [
+            "AST scan & Specwright Score",
+            "OpenAPI, markdown, pytest, ER diagrams",
+            "Autopilot: auto test scaffolds + AI gap fill + CI sync after each scan",
+            "Watch mode & live disk sync",
+            "CI workflow download",
+            "Slack drift webhooks (paste URL per project)",
+            "Breaking-change triage (no LLM)",
+        ],
+        "needs_configuration": [
+            {
+                "feature": "Grounded AI (fill descriptions, tests, chat, migration notes)",
+                "ready": bool(settings.ai_api_key),
+                "env": ["SPECWRIGHT_AI_API_KEY"],
+            },
+            {
+                "feature": "GitHub PR comments & webhooks",
+                "ready": bool(settings.github_token),
+                "env": ["SPECWRIGHT_GITHUB_TOKEN", "SPECWRIGHT_GITHUB_WEBHOOK_SECRET"],
+            },
+            {
+                "feature": "Notion export",
+                "ready": bool(settings.notion_api_key and settings.notion_parent_page_id),
+                "env": ["SPECWRIGHT_NOTION_API_KEY", "SPECWRIGHT_NOTION_PARENT_PAGE_ID"],
+            },
+            {
+                "feature": "Stripe billing",
+                "ready": billing_service.billing_configured(),
+                "env": [
+                    "SPECWRIGHT_STRIPE_SECRET_KEY",
+                    "SPECWRIGHT_STRIPE_WEBHOOK_SECRET",
+                    "SPECWRIGHT_STRIPE_PRICE_ID_PRO",
+                ],
+            },
+        ],
+        "dev_mode": settings.debug,
+        "billing_mock": settings.billing_mock_mode,
+    }
 
 
 @router.patch("/projects/{project_id}", response_model=ProjectOut)
@@ -170,7 +217,9 @@ async def github_pr_comment(
     stats = json.loads(scan.stats or "{}")
     artifact_lines = [f"`{a.file_path}` — {a.title}" for a in scan.artifacts]
     root = Path(project.root_path).resolve()
-    routes = collect_routes(collect_python_files(root), root)
+    files = collect_python_files(root)
+    fw = project.framework if project.framework != "auto" else detect_framework(root)
+    routes = collect_all_routes(files, root, fw)
     openapi = next((a.content for a in scan.artifacts if a.kind == "openapi"), "")
     extra = await enrich_pr_comment_context(
         db,
@@ -238,7 +287,9 @@ async def github_webhook(request: Request, db: AsyncSession = Depends(get_db)):
     stats = json.loads(scan_loaded.stats or "{}")
     lines = [f"`{a.file_path}` — {a.title}" for a in scan_loaded.artifacts]
     root = Path(project.root_path).resolve()
-    routes = collect_routes(collect_python_files(root), root)
+    files = collect_python_files(root)
+    fw = project.framework if project.framework != "auto" else detect_framework(root)
+    routes = collect_all_routes(files, root, fw)
     openapi = next((a.content for a in scan_loaded.artifacts if a.kind == "openapi"), "")
     extra = await enrich_pr_comment_context(
         db,

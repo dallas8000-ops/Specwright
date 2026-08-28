@@ -7,6 +7,7 @@ from api.core.database import get_db
 from api.models.tables import Project
 from api.schemas import BillingStatusOut, CheckoutOut, PricingCatalog
 from api.services import billing_service
+from api.services.stripe_resilience import StripeOperationError
 
 router = APIRouter(prefix="/billing", tags=["billing"])
 
@@ -50,6 +51,16 @@ async def create_checkout(
         )
     except ValueError as e:
         raise HTTPException(400, str(e)) from e
+    except StripeOperationError as e:
+        raise HTTPException(
+            503,
+            {
+                "message": e.failure.message,
+                "category": e.failure.category,
+                "retryable": e.failure.retryable,
+                "request_id": e.failure.request_id,
+            },
+        ) from e
 
     if result.get("mode") == "mock":
         projects = (await db.execute(select(Project))).scalars().all()
@@ -60,6 +71,7 @@ async def create_checkout(
     return CheckoutOut(**result)
 
 
+@router.post("/webhook/", include_in_schema=False)
 @router.post("/webhook")
 async def stripe_webhook(request: Request, db: AsyncSession = Depends(get_db)):
     payload = await request.body()
@@ -77,3 +89,31 @@ async def stripe_webhook(request: Request, db: AsyncSession = Depends(get_db)):
         await db.commit()
 
     return result
+
+
+@router.post("/activate-mock/{project_id}")
+async def activate_mock_pro(project_id: int, db: AsyncSession = Depends(get_db)):
+    """Dev-only: upgrade a project to Pro without Stripe."""
+    if not settings.billing_mock_mode:
+        raise HTTPException(
+            403,
+            "Mock billing is disabled. Set SPECWRIGHT_BILLING_MOCK_MODE=true for local dev.",
+        )
+    project = await db.get(Project, project_id)
+    if not project:
+        raise HTTPException(404, "Project not found")
+    project.plan = "pro"
+    await db.commit()
+    return {"ok": True, "plan": "pro", "project_id": project_id}
+
+
+@router.post("/activate-mock")
+async def activate_mock_pro_all(db: AsyncSession = Depends(get_db)):
+    """Dev-only: upgrade all projects to Pro."""
+    if not settings.billing_mock_mode:
+        raise HTTPException(403, "Mock billing is disabled.")
+    projects = (await db.execute(select(Project))).scalars().all()
+    for p in projects:
+        p.plan = "pro"
+    await db.commit()
+    return {"ok": True, "plan": "pro", "projects_updated": len(projects)}

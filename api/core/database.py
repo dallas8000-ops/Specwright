@@ -21,8 +21,19 @@ def _ensure_sqlite_parent_dir(database_url: str) -> None:
     db_path.parent.mkdir(parents=True, exist_ok=True)
 
 
+def _sqlite_connect_args(database_url: str) -> dict:
+    if not make_url(database_url).drivername.startswith("sqlite"):
+        return {}
+    return {"timeout": 30}
+
+
 _ensure_sqlite_parent_dir(settings.database_url)
-engine = create_async_engine(settings.database_url, echo=settings.debug)
+engine = create_async_engine(
+    settings.database_url,
+    echo=settings.debug,
+    connect_args=_sqlite_connect_args(settings.database_url),
+)
+
 SessionLocal = async_sessionmaker(engine, class_=AsyncSession, expire_on_commit=False)
 
 
@@ -36,6 +47,10 @@ async def get_db():
 
 
 async def init_db():
+    import asyncio
+
+    from sqlalchemy import text
+
     from api.core.migrate import run_migrations
     from api.models import tables  # noqa: F401
     from api.services.project_slug import backfill_project_slugs
@@ -43,6 +58,19 @@ async def init_db():
     async with engine.begin() as conn:
         await conn.run_sync(Base.metadata.create_all)
         await run_migrations(conn)
+
+    if settings.database_url.startswith("sqlite"):
+        for attempt in range(6):
+            try:
+                async with engine.connect() as conn:
+                    await conn.execute(text("PRAGMA busy_timeout=30000"))
+                    await conn.execute(text("PRAGMA journal_mode=WAL"))
+                    await conn.commit()
+                break
+            except Exception:
+                if attempt >= 5:
+                    break
+                await asyncio.sleep(0.4 * (attempt + 1))
 
     async with SessionLocal() as session:
         await backfill_project_slugs(session)

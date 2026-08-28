@@ -1,15 +1,66 @@
 import { useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Link, useNavigate } from "react-router-dom";
-import { ArrowRight, FolderGit2, FileCode2, TestTube2, Network } from "lucide-react";
-import { specwright, Project } from "@/api/specwright";
+import { ArrowRight, FolderGit2, FileCode2, TestTube2, Network, Github } from "lucide-react";
+import axios from "axios";
+import { specwright, Project, ProjectCreateResponse } from "@/api/specwright";
 import styles from "./HomePage.module.css";
+
+type ConnectMode = "local" | "github";
 
 export default function HomePage() {
   const navigate = useNavigate();
   const qc = useQueryClient();
+  const [mode, setMode] = useState<ConnectMode>("local");
   const [name, setName] = useState("My API");
   const [path, setPath] = useState("");
+  const [pathError, setPathError] = useState("");
+  const [githubUrl, setGithubUrl] = useState("https://github.com/tiangolo/fastapi");
+  const [localCheckout, setLocalCheckout] = useState("");
+
+  const defaultParentPath =
+    typeof window !== "undefined"
+      ? "c:\\Software Projects"
+      : "";
+  const defaultPath =
+    typeof window !== "undefined"
+      ? "c:\\Software Projects\\Specwright\\api"
+      : "";
+
+  function handleConnect() {
+    setPathError("");
+    if (mode === "local" && !path.trim()) {
+      setPathError("Enter the absolute path to your project folder.");
+      return;
+    }
+    create.mutate();
+  }
+
+  function apiErrorMessage(err: unknown, fallback: string): string {
+    if (axios.isAxiosError(err)) {
+      if (err.code === "ECONNABORTED") {
+        return "Scan timed out — restart dev (stop-dev.ps1) and try again.";
+      }
+      if (!err.response) {
+        return "Cannot reach Specwright API on port 8088. Run .\\scripts\\stop-dev.ps1 then .\\scripts\\dev.ps1 and wait for API ready.";
+      }
+      const status = err.response?.status;
+      const detail = err.response?.data?.detail;
+      if (typeof detail === "string" && detail.trim()) return detail;
+      if (status === 500) {
+        return "Scan failed on the server (often SQLite busy). Run .\\scripts\\stop-dev.ps1 then .\\scripts\\dev.ps1 and retry.";
+      }
+      if (status === 400 && typeof detail === "string") return detail;
+    }
+    return fallback;
+  }
+
+  const { data: apiHealth, isError: apiDown } = useQuery({
+    queryKey: ["health"],
+    queryFn: async () => (await specwright.get("/health")).data,
+    retry: 1,
+    refetchInterval: 15_000,
+  });
 
   const { data: roadmap } = useQuery({
     queryKey: ["roadmap"],
@@ -24,25 +75,43 @@ export default function HomePage() {
     queryFn: async () => (await specwright.get<Project[]>("/projects")).data,
   });
 
-  const create = useMutation({
+  const afterCreate = (p: ProjectCreateResponse) => {
+    qc.invalidateQueries({ queryKey: ["projects"] });
+    if (p.initial_scan) {
+      qc.setQueryData(["scans", p.id], [p.initial_scan]);
+    }
+    if (p.connected_message) {
+      sessionStorage.setItem(`specwright-connect-msg-${p.id}`, p.connected_message);
+    }
+    navigate(`/project/${p.id}`);
+  };
+
+  const createLocal = useMutation({
     mutationFn: async () =>
       (
-        await specwright.post<Project>("/projects", {
+        await specwright.post<ProjectCreateResponse>("/projects", {
           name,
-          root_path: path,
+          root_path: path.trim(),
           framework: "auto",
         })
       ).data,
-    onSuccess: (p) => {
-      qc.invalidateQueries({ queryKey: ["projects"] });
-      navigate(`/project/${p.id}`);
-    },
+    onSuccess: afterCreate,
   });
 
-  const defaultPath =
-    typeof window !== "undefined"
-      ? "c:\\Software Projects\\AutomationFlow\\api"
-      : "";
+  const createGithub = useMutation({
+    mutationFn: async () =>
+      (
+        await specwright.post<ProjectCreateResponse>("/projects/from-github", {
+          github_url: githubUrl,
+          name: name || undefined,
+          local_path: localCheckout.trim() || undefined,
+          prefer_local: true,
+        })
+      ).data,
+    onSuccess: afterCreate,
+  });
+
+  const create = mode === "github" ? createGithub : createLocal;
 
   return (
     <main className={styles.page}>
@@ -80,29 +149,89 @@ export default function HomePage() {
         <h2>
           <FolderGit2 size={20} /> Connect a codebase
         </h2>
+        {apiDown && (
+          <p className={styles.err}>
+            API offline — scans will fail until you run .\\scripts\\stop-dev.ps1 then .\\scripts\\dev.ps1
+            (wait for &quot;API ready.&quot;).
+          </p>
+        )}
+        {apiHealth && !apiDown && (
+          <p className={styles.hint}>API connected — ready to scan.</p>
+        )}
+        <div className={styles.modeTabs}>
+          <button
+            type="button"
+            className={mode === "github" ? styles.modeActive : ""}
+            onClick={() => setMode("github")}
+          >
+            <Github size={16} /> GitHub URL
+          </button>
+          <button
+            type="button"
+            className={mode === "local" ? styles.modeActive : ""}
+            onClick={() => setMode("local")}
+          >
+            <FolderGit2 size={16} /> Local path
+          </button>
+        </div>
         <div className={styles.form}>
           <input
             placeholder="Project name"
             value={name}
             onChange={(e) => setName(e.target.value)}
           />
-          <input
-            placeholder={`Absolute path e.g. ${defaultPath}`}
-            value={path || defaultPath}
-            onChange={(e) => setPath(e.target.value)}
-          />
+          {mode === "github" ? (
+            <>
+              <input
+                placeholder="https://github.com/org/your-api"
+                value={githubUrl}
+                onChange={(e) => setGithubUrl(e.target.value)}
+              />
+              <input
+                placeholder={`Optional: local checkout e.g. ${defaultParentPath}\\Your-Repo`}
+                value={localCheckout}
+                onChange={(e) => setLocalCheckout(e.target.value)}
+              />
+            </>
+          ) : (
+            <input
+              placeholder={`e.g. ${defaultParentPath}\\Elite Fintech Systems`}
+              value={path}
+              onChange={(e) => setPath(e.target.value)}
+            />
+          )}
           <button
             type="button"
             className={styles.primary}
             disabled={create.isPending}
-            onClick={() => create.mutate()}
+            onClick={handleConnect}
           >
-            {create.isPending ? "Connecting…" : "Analyze codebase"}
+            {create.isPending
+              ? mode === "github"
+                ? "Connecting & scanning…"
+                : "Scanning…"
+              : "Connect & scan"}
             <ArrowRight size={16} />
           </button>
         </div>
+        <p className={styles.hint}>
+          {mode === "local"
+            ? "Scans your folder directly — no clone. Artifacts are written into that project on disk."
+            : "GitHub URL links PR comments. Paste a local path in the optional field to scan your checkout (no clone)."}
+        </p>
+        {pathError && <p className={styles.err}>{pathError}</p>}
         {create.isError && (
-          <p className={styles.err}>Could not access path — use an absolute folder path on disk.</p>
+          <p className={styles.err}>
+            {mode === "github"
+              ? apiErrorMessage(
+                  create.error,
+                  "Could not connect — check GitHub URL, git on PATH, or paste your local checkout path."
+                )
+              : apiErrorMessage(
+                  create.error,
+                  "Connect failed — check that dev is running (API on port 8088)."
+                )}
+          </p>
         )}
       </section>
 

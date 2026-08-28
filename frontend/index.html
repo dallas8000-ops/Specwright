@@ -4,6 +4,7 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <meta name="color-scheme" content="dark" />
+    <meta name="description" content="Specwright turns your codebase into up-to-date docs, tests, and diagrams — spec and requirements tooling built for product and engineering teams." />
     <title>Specwright - Docs, tests and diagrams from code</title>
     <style>
       html, body { margin: 0; min-height: 100%; background: #0f1419; color: #f1f5f9; }
@@ -20,7 +21,14 @@
     <link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,400;0,9..40,500;0,9..40,600;0,9..40,700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet" />
   </head>
   <body>
-    <div id="root"></div>
+    <div id="root">
+      <!-- Static fallback: React replaces this on mount. Search engines and no-JS
+           visitors see this instead of just a "Loading…" message. -->
+      <main style="font-family: 'DM Sans', system-ui, sans-serif; max-width: 640px; margin: 4rem auto; padding: 0 1.5rem; color: #f1f5f9;">
+        <h1 style="font-size: 1.75rem; margin-bottom: 0.5rem;">Specwright</h1>
+        <p style="font-size: 1.05rem; line-height: 1.6; color: #cbd5e1;">Docs, tests, and diagrams generated straight from your code — spec and requirements tooling for product and engineering teams.</p>
+      </main>
+    </div>
     <script type="module" src="/src/main.tsx"></script>
   </body>
 </html>

@@ -17,7 +17,9 @@ import {
   Scan,
   Artifact,
   Context,
+  Features,
   fillDescriptions,
+  fixTestGaps,
 } from "@/api/specwright";
 import ContextFrame from "@/components/ContextFrame";
 import ArtifactViewer from "@/components/ArtifactViewer";
@@ -46,6 +48,11 @@ export default function ProjectPage() {
   const { data: project } = useQuery({
     queryKey: ["project", projectId],
     queryFn: async () => (await specwright.get<Project>(`/projects/${projectId}`)).data,
+  });
+
+  const { data: features } = useQuery({
+    queryKey: ["features"],
+    queryFn: async () => (await specwright.get<Features>("/features")).data,
   });
 
   const { data: context } = useQuery({
@@ -78,8 +85,20 @@ export default function ProjectPage() {
     },
   });
 
+  const fixTests = useMutation({
+    mutationFn: async () => (await fixTestGaps(projectId)).data,
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["scans", projectId] });
+      qc.invalidateQueries({ queryKey: ["health", projectId] });
+      qc.invalidateQueries({ queryKey: ["ai-suite", projectId] });
+      qc.invalidateQueries({ queryKey: ["project", projectId] });
+    },
+  });
+
   const latest = scans?.[0];
   const artifacts = latest?.artifacts ?? [];
+  const isPro = project?.plan === "pro" || project?.plan === "enterprise";
+  const canUseAi = Boolean(features?.ai_suite && isPro);
 
   function copyContent() {
     if (!selected) return;
@@ -145,11 +164,9 @@ export default function ProjectPage() {
           lastScannedAt={latest.created_at}
           onGenerate={() => scan.mutate()}
           isGenerating={scan.isPending}
-          onFillDescriptions={
-            project?.plan === "pro" || project?.plan === "enterprise"
-              ? () => fillDocs.mutate()
-              : undefined
-          }
+          onFixTests={() => fixTests.mutate()}
+          isFixingTests={fixTests.isPending}
+          onFillDescriptions={canUseAi ? () => fillDocs.mutate() : undefined}
           isFillingDescriptions={fillDocs.isPending}
         />
       )}
@@ -157,6 +174,7 @@ export default function ProjectPage() {
       <ProjectAITools
         projectId={projectId}
         project={project}
+        hasScan={Boolean(latest)}
         onArtifactsUpdated={() => {
           qc.invalidateQueries({ queryKey: ["scans", projectId] });
           qc.invalidateQueries({ queryKey: ["health", projectId] });

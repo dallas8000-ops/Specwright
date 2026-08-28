@@ -12,7 +12,8 @@ export default defineConfig({
     strictPort: false,
     open: "/",
     proxy: {
-      "/api/v1": { target: "http://localhost:8080", changeOrigin: true },
+      // Must match scripts/dev.ps1 ($DevApiPort). Do not use 8080 — stale zombies on Windows.
+      "/api/v1": { target: "http://127.0.0.1:8088", changeOrigin: true },
     },
   },
   optimizeDeps: {

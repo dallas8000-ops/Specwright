@@ -13,7 +13,7 @@ import {
   Loader2,
   Building2,
 } from "lucide-react";
-import { specwright, BillingStatus, startCheckout } from "@/api/specwright";
+import { specwright, BillingStatus, Features, startCheckout } from "@/api/specwright";
 import styles from "./BillingPage.module.css";
 
 type Tier = "starter" | "pro";
@@ -30,6 +30,13 @@ export default function BillingPage() {
     queryKey: ["billing"],
     queryFn: async () => (await specwright.get<BillingStatus>("/billing/status")).data,
   });
+
+  const { data: features } = useQuery({
+    queryKey: ["features"],
+    queryFn: async () => (await specwright.get<Features>("/features")).data,
+  });
+
+  const checkoutAvailable = Boolean(features?.stripe || features?.billing_mock);
 
   const checkout = useMutation({
     mutationFn: async (tier: Tier) =>
@@ -148,7 +155,12 @@ export default function BillingPage() {
           <button
             type="button"
             className={styles.secondaryCta}
-            disabled={checkout.isPending || currentPlan === "starter" || isLoading}
+            disabled={
+              !checkoutAvailable ||
+              checkout.isPending ||
+              currentPlan === "starter" ||
+              isLoading
+            }
             onClick={() => checkout.mutate("starter")}
           >
             {currentPlan === "starter" ? "Current plan" : "Choose Starter"}
@@ -182,7 +194,12 @@ export default function BillingPage() {
           <button
             type="button"
             className={styles.primaryCta}
-            disabled={checkout.isPending || currentPlan === "pro" || isLoading}
+            disabled={
+              !checkoutAvailable ||
+              checkout.isPending ||
+              currentPlan === "pro" ||
+              isLoading
+            }
             onClick={() => checkout.mutate("pro")}
           >
             {checkout.isPending ? (
@@ -199,7 +216,11 @@ export default function BillingPage() {
           </button>
           <p className={styles.secure}>
             <Lock size={12} />
-            Secure checkout powered by Stripe
+            {checkoutAvailable
+              ? features?.billing_mock
+                ? "Local dev — mock checkout, no charge"
+                : "Secure checkout powered by Stripe"
+              : "Checkout unavailable — email sales@specwright.dev"}
           </p>
         </article>
 

@@ -1,12 +1,13 @@
 import { useState } from "react";
 import { useMutation } from "@tanstack/react-query";
-import { Link } from "react-router-dom";
-import { Cloud, Github, Loader2 } from "lucide-react";
-import { specwright } from "@/api/specwright";
+import { Link, useNavigate } from "react-router-dom";
+import { Cloud, Github, LayoutDashboard, Loader2 } from "lucide-react";
+import { createProjectFromGitHub, specwright } from "@/api/specwright";
 import styles from "./TryHostedPage.module.css";
 
 type Preview = {
   repo: string;
+  github_url?: string;
   score: number;
   grade: string;
   message: string;
@@ -20,11 +21,28 @@ type Preview = {
 };
 
 export default function TryHostedPage() {
+  const navigate = useNavigate();
   const [url, setUrl] = useState("https://github.com/tiangolo/fastapi");
 
   const preview = useMutation({
     mutationFn: async () =>
       (await specwright.post<Preview>("/hosted/preview", { github_url: url })).data,
+  });
+
+  const saveToDashboard = useMutation({
+    mutationFn: async () => {
+      const repo = preview.data?.repo ?? "";
+      const name = repo.split("/").pop() || "GitHub project";
+      return (
+        await createProjectFromGitHub({
+          github_url: preview.data?.github_url ?? url,
+          name,
+        })
+      ).data;
+    },
+    onSuccess: (project) => {
+      navigate(`/project/${project.id}`);
+    },
   });
 
   const result = preview.data;
@@ -38,8 +56,8 @@ export default function TryHostedPage() {
         <h1>Score any public GitHub repo in ~60 seconds</h1>
         <p className={styles.lead}>
           No clone of Specwright required for this preview — paste a repo URL and we
-          shallow-clone, scan, and return your Specwright Score. Full{" "}
-          <code>app.specwright.io</code> coming next.
+          shallow-clone, scan, and return your Specwright Score. Add to your team
+          dashboard for watch mode, badges, and PR automation.
         </p>
       </header>
 
@@ -88,9 +106,30 @@ export default function TryHostedPage() {
               <li>{Math.round(result.breakdown.documentation_pct)}% documented</li>
               <li>{Math.round(result.breakdown.test_coverage_pct)}% test coverage</li>
             </ul>
+            <div className={styles.actions}>
+              <button
+                type="button"
+                className={styles.saveBtn}
+                disabled={saveToDashboard.isPending}
+                onClick={() => saveToDashboard.mutate()}
+              >
+                {saveToDashboard.isPending ? (
+                  <>
+                    <Loader2 size={16} className={styles.spin} /> Adding to dashboard…
+                  </>
+                ) : (
+                  <>
+                    <LayoutDashboard size={16} /> Add to team dashboard
+                  </>
+                )}
+              </button>
+            </div>
+            {saveToDashboard.isError && (
+              <p className={styles.err}>Could not save project — try again or connect from home.</p>
+            )}
             <p className={styles.next}>
-              Want watch mode, PR comments, and a README badge?{" "}
-              <Link to="/">Connect this repo locally</Link> or deploy Specwright for your team.
+              Saves with watch mode, artifact sync, and CI workflow enabled automatically.{" "}
+              <Link to="/">Connect another repo</Link>
             </p>
           </div>
         </section>

@@ -56,73 +56,79 @@ class WatchManager:
             except asyncio.QueueFull:
                 pass
 
+    async def _scan_project(self, project_id: int) -> None:
+        await self._broadcast(project_id, {"type": "scan_started", "reason": "files_changed"})
+        try:
+            from api.services.scan_history import previous_openapi
+
+            async with SessionLocal() as db:
+                project = await db.get(Project, project_id)
+                if not project:
+                    return
+                prev = await previous_openapi(db, project_id)
+                scan = await run_scan(
+                    project, db, trigger="watch", previous_openapi=prev
+                )
+                stats = json.loads(scan.stats or "{}")
+                score = stats.get("score", {}).get("score", 0)
+                project.last_score = score
+                await db.commit()
+                scan_id = scan.id
+
+            async with SessionLocal() as db:
+                r2 = await db.execute(
+                    select(Scan)
+                    .where(Scan.id == scan_id)
+                    .options(selectinload(Scan.artifacts))
+                )
+                scan_loaded = r2.scalar_one()
+                project = await db.get(Project, project_id)
+                stats = json.loads(scan_loaded.stats or "{}")
+                drift = stats.get("drift", {})
+                if drift.get("drift_detected") and project:
+                    await notify_drift(
+                        project.name,
+                        drift.get("message", "Spec drift detected"),
+                        score,
+                        project.slack_webhook or None,
+                    )
+                await self._broadcast(
+                    project_id,
+                    {
+                        "type": "scan_completed",
+                        "scan_id": scan_loaded.id,
+                        "summary": scan_loaded.summary,
+                        "artifact_count": len(scan_loaded.artifacts),
+                        "score": stats.get("score"),
+                        "coverage": stats.get("coverage"),
+                        "synced_files": stats.get("synced_files", []),
+                    },
+                )
+        except Exception as e:
+            await self._broadcast(
+                project_id,
+                {"type": "scan_failed", "error": str(e)},
+            )
+
     async def _tick(self) -> None:
         async with SessionLocal() as db:
             result = await db.execute(
-                select(Project).where(Project.watch_enabled.is_(True))
+                select(Project.id, Project.root_path).where(Project.watch_enabled.is_(True))
             )
-            projects = result.scalars().all()
+            rows = result.all()
 
-            for project in projects:
-                root = Path(project.root_path).resolve()
-                if not root.exists():
-                    continue
-                current = _tree_mtime(root)
-                prev = self._snapshots.get(project.id)
-                self._snapshots[project.id] = current
-                if prev is None:
-                    continue
-                if current <= prev:
-                    continue
-
-                await self._broadcast(
-                    project.id,
-                    {"type": "scan_started", "reason": "files_changed"},
-                )
-                try:
-                    import json
-
-                    from api.services.scan_history import previous_openapi
-
-                    prev = await previous_openapi(db, project.id)
-                    scan = await run_scan(
-                        project, db, trigger="watch", previous_openapi=prev
-                    )
-                    stats = json.loads(scan.stats or "{}")
-                    score = stats.get("score", {}).get("score", 0)
-                    project.last_score = score
-                    await db.commit()
-                    r2 = await db.execute(
-                        select(Scan)
-                        .where(Scan.id == scan.id)
-                        .options(selectinload(Scan.artifacts))
-                    )
-                    scan_loaded = r2.scalar_one()
-                    drift = stats.get("drift", {})
-                    if drift.get("drift_detected"):
-                        await notify_drift(
-                            project.name,
-                            drift.get("message", "Spec drift detected"),
-                            score,
-                            project.slack_webhook or None,
-                        )
-                    await self._broadcast(
-                        project.id,
-                        {
-                            "type": "scan_completed",
-                            "scan_id": scan_loaded.id,
-                            "summary": scan_loaded.summary,
-                            "artifact_count": len(scan_loaded.artifacts),
-                            "score": stats.get("score"),
-                            "coverage": stats.get("coverage"),
-                            "synced_files": stats.get("synced_files", []),
-                        },
-                    )
-                except Exception as e:
-                    await self._broadcast(
-                        project.id,
-                        {"type": "scan_failed", "error": str(e)},
-                    )
+        for project_id, root_path in rows:
+            root = Path(root_path).resolve()
+            if not root.exists():
+                continue
+            current = _tree_mtime(root)
+            prev = self._snapshots.get(project_id)
+            self._snapshots[project_id] = current
+            if prev is None:
+                continue
+            if current <= prev:
+                continue
+            await self._scan_project(project_id)
 
     async def _loop(self) -> None:
         while True:

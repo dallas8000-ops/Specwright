@@ -31,6 +31,28 @@ async def test_billing_webhook_returns_plan_from_service(monkeypatch):
 
 
 @pytest.mark.anyio
+async def test_trailing_slash_webhook_is_handled_without_redirect(monkeypatch):
+    async def fake_handle(payload: bytes, sig_header: str | None):
+        return {"received": True, "type": "ping"}
+
+    monkeypatch.setattr(
+        "api.routers.billing.billing_service.handle_stripe_webhook",
+        fake_handle,
+    )
+    transport = httpx.ASGITransport(app=app)
+    async with httpx.AsyncClient(transport=transport, base_url="http://testserver") as client:
+        response = await client.post(
+            "/api/v1/billing/webhook/",
+            content="{}",
+            headers={"Stripe-Signature": "sig"},
+            follow_redirects=False,
+        )
+
+    assert response.status_code == 200
+    assert response.history == []
+
+
+@pytest.mark.anyio
 async def test_billing_webhook_returns_400_on_stripe_signature_error(monkeypatch):
     import stripe
 

@@ -116,6 +116,27 @@
   color: var(--text-muted);
 }
 
+.actions {
+  margin: 0.75rem 0;
+}
+
+.saveBtn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.65rem 1rem;
+  background: var(--accent-dim);
+  border: 1px solid rgba(34, 211, 238, 0.45);
+  color: var(--accent);
+  border-radius: var(--radius);
+  font-weight: 600;
+  font-size: 0.9rem;
+}
+
+.saveBtn:hover:not(:disabled) {
+  filter: brightness(1.08);
+}
+
 .next {
   margin-top: 0.5rem;
 }

@@ -7,15 +7,30 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import HTMLResponse
 
 from api.core.config import settings
-from api.core.database import init_db
+from api.core.database import init_db, SessionLocal
+from api.models.tables import Project
 from api.routers import ai, billing, hosted, insights, integrations, projects, public
 from api.services import billing_service
 from api.services.watch_service import watch_manager
+from sqlalchemy import select
+
+
+async def _upgrade_dev_projects_to_pro() -> None:
+    if not settings.billing_mock_mode:
+        return
+    async with SessionLocal() as db:
+        result = await db.execute(select(Project).where(Project.plan == "starter"))
+        rows = result.scalars().all()
+        for project in rows:
+            project.plan = "pro"
+        if rows:
+            await db.commit()
 
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     await init_db()
+    await _upgrade_dev_projects_to_pro()
     watch_manager.start()
     yield
     if watch_manager._task:
@@ -85,6 +100,8 @@ async def health():
 
 @app.get("/api/v1/health/billing")
 async def health_billing():
+    from api.services.stripe_resilience import stripe_health_snapshot
+
     return {
         "status": "ok" if billing_service.billing_configured() else "missing_config",
         "billing": {
@@ -96,6 +113,7 @@ async def health_billing():
         },
         "webhook_url_path": "/api/v1/billing/webhook",
         "required_webhook_events": ["checkout.session.completed"],
+        "resilience": stripe_health_snapshot(),
     }
 
 

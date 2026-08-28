@@ -100,9 +100,20 @@ export default function ProjectIntegrations({
     },
   });
 
+  const isPro = project?.plan === "pro" || project?.plan === "enterprise";
   const canPolish =
-    selectedArtifactId != null &&
-    (features?.ai_polish || project?.plan === "pro" || project?.plan === "enterprise");
+    selectedArtifactId != null && Boolean(features?.ai_polish && isPro);
+
+  const pendingConfig: string[] = [];
+  if (!features?.github) {
+    pendingConfig.push("GitHub PR comments — set SPECWRIGHT_GITHUB_TOKEN on the API");
+  }
+  if (!features?.ai_polish) {
+    pendingConfig.push("AI polish & Grounded AI — set SPECWRIGHT_AI_API_KEY on the API");
+  }
+  if (!features?.notion) {
+    pendingConfig.push("Notion export — set SPECWRIGHT_NOTION_API_KEY + SPECWRIGHT_NOTION_PARENT_PAGE_ID");
+  }
 
   return (
     <section className={styles.panel}>
@@ -113,10 +124,7 @@ export default function ProjectIntegrations({
             <Eye size={16} />
             <strong>Watch mode</strong>
           </div>
-          <p>
-            Live sync — every save updates OpenAPI, tests, and docs on disk. No regenerate
-            click.
-          </p>
+          <p>Live sync — every save updates OpenAPI, tests, and docs on disk.</p>
           <label className={styles.toggle}>
             <input
               type="checkbox"
@@ -129,60 +137,56 @@ export default function ProjectIntegrations({
           {watchStatus && <span className={styles.status}>{watchStatus}</span>}
         </div>
 
-        <div className={styles.card}>
-          <div className={styles.cardHead}>
-            <Github size={16} />
-            <strong>GitHub PR comment</strong>
+        {features?.github && (
+          <div className={styles.card}>
+            <div className={styles.cardHead}>
+              <Github size={16} />
+              <strong>GitHub PR comment</strong>
+            </div>
+            <input
+              placeholder="owner/repo"
+              value={githubRepo}
+              onChange={(e) => setGithubRepo(e.target.value)}
+              onBlur={() => saveRepo.mutate()}
+            />
+            <input
+              placeholder="PR number"
+              value={prNumber}
+              onChange={(e) => setPrNumber(e.target.value)}
+            />
+            <button
+              type="button"
+              disabled={!prNumber || prComment.isPending}
+              onClick={() => prComment.mutate()}
+            >
+              {prComment.isPending ? <Loader2 size={14} className={styles.spin} /> : null}
+              Comment on PR
+            </button>
+            {prComment.isSuccess && (
+              <a href={prComment.data.html_url} target="_blank" rel="noreferrer">
+                View comment
+              </a>
+            )}
           </div>
-          <input
-            placeholder="owner/repo"
-            value={githubRepo}
-            onChange={(e) => setGithubRepo(e.target.value)}
-            onBlur={() => saveRepo.mutate()}
-          />
-          <input
-            placeholder="PR number"
-            value={prNumber}
-            onChange={(e) => setPrNumber(e.target.value)}
-          />
-          <button
-            type="button"
-            disabled={!prNumber || prComment.isPending || !features?.github}
-            onClick={() => prComment.mutate()}
-            title={
-              features?.github
-                ? "Post scan summary to PR"
-                : "Set SPECWRIGHT_GITHUB_TOKEN on API"
-            }
-          >
-            {prComment.isPending ? <Loader2 size={14} className={styles.spin} /> : null}
-            Comment on PR
-          </button>
-          {prComment.isSuccess && (
-            <a href={prComment.data.html_url} target="_blank" rel="noreferrer">
-              View comment
-            </a>
-          )}
-        </div>
+        )}
 
-        <div className={styles.card}>
-          <div className={styles.cardHead}>
-            <Sparkles size={16} />
-            <strong>AI polish</strong>
+        {canPolish && (
+          <div className={styles.card}>
+            <div className={styles.cardHead}>
+              <Sparkles size={16} />
+              <strong>AI polish</strong>
+            </div>
+            <p>Improve markdown artifacts (API docs, model docs).</p>
+            <button
+              type="button"
+              disabled={polish.isPending}
+              onClick={() => polish.mutate()}
+            >
+              {polish.isPending ? <Loader2 size={14} className={styles.spin} /> : null}
+              Polish selected
+            </button>
           </div>
-          <p>Improve markdown artifacts (API docs, model docs).</p>
-          <button
-            type="button"
-            disabled={!canPolish || polish.isPending}
-            onClick={() => polish.mutate()}
-          >
-            {polish.isPending ? <Loader2 size={14} className={styles.spin} /> : null}
-            Polish selected
-          </button>
-          {!features?.ai_polish && (
-            <span className={styles.hint}>Add SPECWRIGHT_AI_API_KEY on API</span>
-          )}
-        </div>
+        )}
 
         <div className={styles.card}>
           <div className={styles.cardHead}>
@@ -205,19 +209,21 @@ export default function ProjectIntegrations({
           </button>
         </div>
 
-        <div className={styles.card}>
-          <div className={styles.cardHead}>
-            <BookOpen size={16} />
-            <strong>Push to Notion</strong>
+        {features?.notion && (
+          <div className={styles.card}>
+            <div className={styles.cardHead}>
+              <BookOpen size={16} />
+              <strong>Push to Notion</strong>
+            </div>
+            <p>Export API reference to your team workspace.</p>
+            <button
+              type="button"
+              onClick={() => pushNotion(projectId, { title: `${project?.name} API` })}
+            >
+              Push API docs
+            </button>
           </div>
-          <p>Export API reference to your team workspace.</p>
-          <button
-            type="button"
-            onClick={() => pushNotion(projectId, { title: `${project?.name} API` })}
-          >
-            Push API docs
-          </button>
-        </div>
+        )}
 
         <div className={styles.card}>
           <div className={styles.cardHead}>
@@ -233,6 +239,17 @@ export default function ProjectIntegrations({
           />
         </div>
       </div>
+
+      {pendingConfig.length > 0 && (
+        <div className={styles.configPending}>
+          <strong>Enable on the API server (.env)</strong>
+          <ul>
+            {pendingConfig.map((line) => (
+              <li key={line}>{line}</li>
+            ))}
+          </ul>
+        </div>
+      )}
     </section>
   );
 }

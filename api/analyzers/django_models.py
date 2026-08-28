@@ -6,6 +6,24 @@ import re
 from pathlib import Path
 
 
+def collect_django_model_names(files: list[Path], root: Path) -> list[dict]:
+    out = []
+    for fp in files:
+        if "model" not in fp.name.lower():
+            continue
+        try:
+            tree = ast.parse(fp.read_text(encoding="utf-8"))
+        except SyntaxError:
+            continue
+        mod = str(fp.relative_to(root)).replace("\\", "/")
+        for node in ast.walk(tree):
+            if isinstance(node, ast.ClassDef):
+                src = ast.unparse(node) if hasattr(ast, "unparse") else ""
+                if "Model" in src or "models.Model" in src:
+                    out.append({"name": node.name, "module": mod})
+    return out
+
+
 def analyze_django_models(files: list[Path], root: Path) -> tuple[str, str]:
     models = []
     for fp in files:

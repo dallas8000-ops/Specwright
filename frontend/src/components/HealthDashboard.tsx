@@ -1,4 +1,4 @@
-import type { ReactNode } from "react";
+import { useEffect, useRef, type ReactNode } from "react";
 import { useQuery } from "@tanstack/react-query";
 import {
   AlertTriangle,
@@ -18,6 +18,8 @@ type Props = {
   lastScannedAt?: string;
   onGenerate?: () => void;
   isGenerating?: boolean;
+  onFixTests?: () => void;
+  isFixingTests?: boolean;
   onFillDescriptions?: () => void;
   isFillingDescriptions?: boolean;
 };
@@ -29,6 +31,8 @@ export default function HealthDashboard({
   lastScannedAt,
   onGenerate,
   isGenerating,
+  onFixTests,
+  isFixingTests,
   onFillDescriptions,
   isFillingDescriptions,
 }: Props) {
@@ -37,6 +41,20 @@ export default function HealthDashboard({
     queryFn: async () =>
       (await specwright.get<ProjectHealth>(`/projects/${projectId}/health`)).data,
   });
+
+  const autoFixStarted = useRef(false);
+  useEffect(() => {
+    if (
+      health?.alerts?.test_gap &&
+      onFixTests &&
+      !autoFixStarted.current &&
+      !isFixingTests &&
+      !isGenerating
+    ) {
+      autoFixStarted.current = true;
+      onFixTests();
+    }
+  }, [health?.alerts?.test_gap, onFixTests, isFixingTests, isGenerating]);
 
   if (isLoading || !health) {
     return (
@@ -132,6 +150,37 @@ export default function HealthDashboard({
         </div>
       )}
 
+      {health.autopilot?.checks && health.autopilot.checks.length > 0 && (
+        <div
+          className={
+            health.autopilot.all_pass ? styles.bannerSuccess : styles.bannerWarning
+          }
+        >
+          <Sparkles size={18} />
+          <div>
+            <p style={{ margin: 0, fontWeight: 600 }}>
+              Autopilot {health.autopilot.all_pass ? "— all checks passed" : "— finishing checks"}
+            </p>
+            <ul className={styles.autopilotChecks}>
+              {health.autopilot.checks.map((c) => (
+                <li key={c.id}>
+                  <span className={styles.checkStatus}>{c.status}</span>
+                  {c.label}
+                  {c.detail ? ` (${c.detail})` : ""}
+                </li>
+              ))}
+            </ul>
+          </div>
+        </div>
+      )}
+
+      {alerts?.zero_routes && (
+        <div className={styles.bannerWarning}>
+          <AlertTriangle size={18} />
+          <p>{alerts.zero_routes.message}</p>
+        </div>
+      )}
+
       {alerts?.test_gap && (
         <div className={styles.bannerWarning}>
           <AlertTriangle size={18} />
@@ -140,16 +189,18 @@ export default function HealthDashboard({
             <button
               type="button"
               className={styles.bannerAction}
-              onClick={onGenerate}
-              disabled={isGenerating}
+              onClick={onFixTests ?? onGenerate}
+              disabled={isFixingTests || isGenerating}
             >
-              {isGenerating ? "Generating…" : "Generate now to fix."}
+              {isFixingTests || isGenerating
+                ? "Fixing tests…"
+                : "Fix automatically"}
             </button>
           </p>
         </div>
       )}
 
-      {alerts?.description_gap && (
+      {alerts?.description_gap && onFillDescriptions && (
         <div
           className={
             alerts.description_gap.filled
@@ -160,7 +211,7 @@ export default function HealthDashboard({
           <BookOpen size={18} />
           <p>
             {alerts.description_gap.message}{" "}
-            {!alerts.description_gap.filled && onFillDescriptions && (
+            {!alerts.description_gap.filled && (
               <button
                 type="button"
                 className={styles.bannerAction}

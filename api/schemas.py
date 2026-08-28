@@ -8,6 +8,27 @@ class ProjectCreate(BaseModel):
     root_path: str = Field(..., description="Absolute path to codebase on disk")
     framework: str = Field(default="auto", pattern="^(auto|django|fastapi|python)$")
     github_repo: str = Field(default="", description="owner/repo for PR comments")
+    auto_watch: bool | None = Field(
+        default=None, description="Override SPECWRIGHT_AUTO_WATCH_ON_CREATE"
+    )
+    auto_scan: bool | None = Field(
+        default=None, description="Override SPECWRIGHT_AUTO_SCAN_ON_CREATE"
+    )
+
+
+class ProjectFromGitHubIn(BaseModel):
+    github_url: str = Field(..., min_length=10, max_length=500)
+    name: str | None = Field(default=None, max_length=255)
+    local_path: str | None = Field(
+        default=None,
+        description="Optional absolute path to your existing checkout (must match github_url remote)",
+    )
+    prefer_local: bool = Field(
+        default=True,
+        description="When true, scan a matching local folder before cloning",
+    )
+    auto_watch: bool | None = None
+    auto_scan: bool | None = None
 
 
 class ProjectUpdate(BaseModel):
@@ -98,6 +119,24 @@ class ScanOut(BaseModel):
     model_config = {"from_attributes": True}
 
 
+class ScanSummaryOut(BaseModel):
+    """Lightweight scan for connect responses — no artifact bodies."""
+
+    id: int
+    project_id: int
+    status: str
+    summary: str
+    trigger: str = "manual"
+    created_at: datetime
+    artifact_count: int = 0
+
+
+class ProjectCreateOut(ProjectOut):
+    initial_scan: ScanSummaryOut | None = None
+    connected_via: str = "local"
+    connected_message: str = ""
+
+
 class ContextOut(BaseModel):
     what_happened: str
     who: str
@@ -160,6 +199,9 @@ class FeaturesOut(BaseModel):
     ai_suite: bool
     watch: bool
     stripe: bool
+    billing_mock: bool = False
+    dev_mode: bool = False
+    notion: bool = False
 
 
 class BreakingChangeItem(BaseModel):
@@ -209,6 +251,32 @@ class AiReconcileOut(BaseModel):
 class AiTestsOut(BaseModel):
     content: str
     enhanced: int
+
+
+class TestGapFixOut(BaseModel):
+    scaffolded_routes: int
+    gaps_before: int
+    gaps_after: int
+    ai_enhanced: int
+    score: int
+    synced_files: list[str] = []
+    checks: list[dict] = []
+
+
+class AutopilotCheck(BaseModel):
+    id: str
+    label: str
+    status: str
+    detail: str | None = None
+
+
+class AutopilotOut(BaseModel):
+    enabled: bool = True
+    tests_gaps_before: int = 0
+    tests_gaps_after: int = 0
+    tests_ai_enhanced: int = 0
+    checks: list[AutopilotCheck] = []
+    all_pass: bool = False
 
 
 class AiChatIn(BaseModel):
@@ -301,6 +369,7 @@ class HealthAlerts(BaseModel):
 class ScanAiInsights(BaseModel):
     description_gaps: int = 0
     descriptions_filled: int = 0
+    tests_enhanced: int = 0
     migration_note: str | None = None
     auto_ran: bool = False
 
@@ -317,6 +386,7 @@ class HealthOut(BaseModel):
     ai: ScanAiInsights | None = None
     synced_files: list[str] = []
     last_scanned_at: str | None = None
+    autopilot: AutopilotOut | None = None
 
 
 class CiTemplateOut(BaseModel):
