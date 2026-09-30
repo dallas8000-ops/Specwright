@@ -13,7 +13,9 @@ from api.core.config import settings
 def verify_webhook_signature(body: bytes, signature: str | None) -> bool:
     secret = settings.github_webhook_secret
     if not secret:
-        return True
+        # Fail closed: with no shared secret configured we cannot authenticate
+        # the sender, so an unsigned request must not be treated as GitHub.
+        return False
     if not signature or not signature.startswith("sha256="):
         return False
     expected = hmac.new(secret.encode(), body, hashlib.sha256).hexdigest()
