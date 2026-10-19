@@ -2,6 +2,9 @@
 
 **The documentation layer for FastAPI and Django teams — automatically.**
 
+> **Supported path:** the FastAPI service in [`api/`](api/) plus the React + Vite UI in [`frontend/`](frontend/). That is what runs in production on Railway and what the setup steps below use.
+> The Django project in [`backend/`](backend/) is **legacy and unsupported** — it is not deployed and the UI does not call it. ("Django" elsewhere in this README means Django *codebases that Specwright scans*, not this repo's own backend.)
+
 [Live demo](https://specwright-web-production.up.railway.app) · [Try GitHub](https://specwright-web-production.up.railway.app/try) · [Repository](https://github.com/dallas8000-ops/Specwright)
 
 `Python 3.11+` · `FastAPI` · `React + Vite` · `OpenAPI 3.1` · `Team dashboard` · `Grounded AI (Pro)`
@@ -143,10 +146,11 @@ Same scan engine as the local flow, zero venv setup for evaluators. Connect the 
 
 ```
 Specwright/
-├── api/          # Specwright backend (FastAPI, port 8080)
-├── frontend/     # React + Vite UI (port 5173+)
-├── backend/      # Legacy Django app (not wired into the current UI)
-└── scripts/dev.ps1
+├── api/                 # SUPPORTED — Specwright API (FastAPI, port 8080); deployed via api/Dockerfile
+├── frontend/            # SUPPORTED — React + Vite UI (port 5173+); deployed as the web service
+├── scripts/dev.ps1      # Local dev launcher for api/ + frontend/
+├── backend/             # LEGACY / UNSUPPORTED — earlier Django prototype, not deployed, not used by the UI
+└── docker-compose.yml   # LEGACY — Postgres/Redis/Celery stack for backend/ only
 ```
 
 - **Database:** SQLite async (`SPECWRIGHT_DATABASE_URL`, default `sqlite+aiosqlite:///specwright.db`)
@@ -190,6 +194,8 @@ After changing `VITE_API_URL`, redeploy the web service — the value is baked i
 
 ## Quick start (local)
 
+This runs the supported stack (`api/` + `frontend/`). You do **not** need `backend/`, `docker-compose.yml`, Postgres, or Redis.
+
 ```bash
 git clone https://github.com/dallas8000-ops/Specwright.git
 cd Specwright
@@ -221,7 +227,7 @@ GitHub Actions workflow: `.github/workflows/ci-smoke.yml`. Three independent che
 
 - Frontend unit smoke (`npm run test:run`)
 - API tests with coverage gate (`--cov-fail-under=30`)
-- Backend pytest with coverage gate (`--cov-fail-under=60`, configured in `backend/pytest.ini`)
+- Legacy Django `backend/` pytest with coverage gate (`--cov-fail-under=60`, configured in `backend/pytest.ini`) — kept green so the legacy code doesn't rot, but it is not part of the deployed product
 
 These thresholds are conservative by design — they enforce a baseline in CI without blocking iteration.
 
