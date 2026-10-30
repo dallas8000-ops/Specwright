@@ -5,6 +5,18 @@ from pathlib import Path
 import environ
 
 BASE_DIR = Path(__file__).resolve().parent.parent
+
+import sentry_sdk
+from sentry_sdk.integrations.django import DjangoIntegration
+
+sentry_sdk.init(
+    dsn=os.environ.get("SENTRY_DSN", ""),
+    integrations=[DjangoIntegration()],
+    traces_sample_rate=0.1,     # perf monitoring sample rate
+    send_default_pii=False,     # don't leak user PII into Sentry — matches your security posture
+    environment=os.environ.get("SENTRY_ENVIRONMENT", "production"),
+)
+
 env = environ.Env(
     DEBUG=(bool, False),
     ALLOWED_HOSTS=(list, ["localhost", "127.0.0.1"]),
