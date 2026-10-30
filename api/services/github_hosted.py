@@ -48,6 +48,31 @@ def _artifact(kind: str, content: str) -> SimpleNamespace:
     return SimpleNamespace(kind=kind, content=content)
 
 
+def _collect_existing_tests(root: Path) -> str:
+    """Collect real test file content from the cloned repository."""
+    patterns = (
+        "tests.py",
+        "test_*.py",
+        "*_test.py",
+        "*_tests.py",
+    )
+    skip_parts = {".git", ".venv", "venv", "node_modules", "__pycache__"}
+    chunks: list[str] = []
+
+    for pattern in patterns:
+        for fp in root.rglob(pattern):
+            if any(part in skip_parts for part in fp.parts):
+                continue
+            try:
+                text = fp.read_text(encoding="utf-8")
+            except OSError:
+                continue
+            rel = fp.relative_to(root).as_posix()
+            chunks.append(f"\n# file: {rel}\n{text}\n")
+
+    return "\n".join(chunks)
+
+
 def preview_github_repository(url: str) -> dict:
     owner, repo = parse_github_url(url)
     tmp = Path(tempfile.mkdtemp(prefix="specwright-preview-"))
@@ -60,7 +85,12 @@ def preview_github_repository(url: str) -> dict:
         framework = detect_framework(tmp)
         routes = collect_routes(files, tmp)
         openapi, api_md = analyze_fastapi(files, tmp)
-        tests = generate_tests(
+        # Hosted preview should score against real repository tests, not scaffold output.
+        tests = _collect_existing_tests(tmp)
+
+        # Keep generating scaffold content for downstream experiences, but do not use it
+        # as the score input because it inflates/warps true test coverage.
+        _ = generate_tests(
             framework=framework,
             routes=routes,
             models=[],

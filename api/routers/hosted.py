@@ -21,6 +21,11 @@ async def hosted_github_preview(body: HostedPreviewIn):
         result = preview_github_repository(body.github_url)
     except ValueError as e:
         raise HTTPException(400, str(e)) from e
+    except FileNotFoundError as e:
+        raise HTTPException(
+            500,
+            "Hosted preview requires git on the API server. Redeploy the API service with git installed.",
+        ) from e
     except RuntimeError as e:
         raise HTTPException(502, str(e)) from e
     except subprocess.TimeoutExpired as e:
