@@ -1,7 +1,7 @@
 {
   "createdAt": "2026-06-22T03:04:01.813679+00:00",
-  "updatedAt": "2026-07-06T05:52:41.768592+00:00",
-  "accountId": null,
+  "updatedAt": "2026-10-02T15:33:56.377116+00:00",
+  "accountId": "acct_1TVQpaRxznXvj6jh",
   "products": [
     {
       "id": "prod_UgdnrglonWJRHJ",
@@ -57,10 +57,13 @@
     }
   ],
   "webhookEndpoint": {
-    "id": "we_1Tq5SPRxznXvj6jhgqWtsFFw",
+    "id": "we_1UM8TARxznXvj6jhsvPcsdsU",
     "url": "https://specwright-api-production.up.railway.app/api/v1/billing/webhook",
     "reused": false
   },
-  "billingPortalConfig": null,
+  "billingPortalConfig": {
+    "id": "bpc_1UM2hnRxznXvj6jhjwWD09cF",
+    "reused": true
+  },
   "appUrl": "https://specwright-api-production.up.railway.app"
 }
